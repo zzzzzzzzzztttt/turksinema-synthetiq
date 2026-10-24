@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "repository": "TurkSinema Synthetiq Repository",
+  "repositoryId": "turksinema-synthetiq",
+  "name": "TurkSinema Synthetiq Repository",
+  "enabled": true,
+  "bundleVersion": 6,
+  "bundleFile": "modules/dizimom-source-v1.zip",
+  "minAppVersion": "8.0.0",
+  "modules": [
+    {
+      "moduleId": "dizimom-source-v1",
+      "moduleFamilyId": "dizimom_source_v1",
+      "moduleIdentity": "SP-VID-991-DZMM",
+      "moduleIdentityNumber": 991,
+      "contentType": "video",
+      "version": "1.0.0",
+      "moduleVersion": "1.0.0",
+      "releaseTrack": "stable",
+      "file": "modules/dizimom-source-v1.zip",
+      "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizimom-source-v1.zip",
+      "sha256": "14eeb1f409f1c23581ea2b599865552e6ec92a1fabf1def230239af077ec8354",
+      "publishedAt": "2026-10-24T17:11:04.096Z",
+      "publishedAtMs": 1792861864097,
+      "presentation": {
+        "category": "Movies & TV",
+        "purpose": "Turkish Movies & Series with Dual Audio (TR Dub / EN Sub)",
+        "recommended": true,
+        "language": "Turkish Sub/Dub",
+        "languages": [
+          "sub",
+          "dub"
+        ],
+        "iconUrl": "https://www.google.com/s2/favicons?domain=ddizimom.net&sz=128"
+      },
+      "changelog": [
+        "1.0.0: Dedicated DiziMom module with native iOS AVPlayer multi-audio HLS track switching."
+      ]
+    },
+    {
+      "moduleId": "animland-source-v1",
+      "moduleFamilyId": "animland_source_v1",
+      "moduleIdentity": "SP-VID-992-ANML",
+      "moduleIdentityNumber": 992,
+      "contentType": "video",
+      "version": "1.0.0",
+      "moduleVersion": "1.0.0",
+      "releaseTrack": "stable",
+      "file": "modules/animland-source-v1.zip",
+      "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animland-source-v1.zip",
+      "sha256": "3e265557f1d72c1820de59e8ffed9d1bea58d392cd0d501171337a6ff2770042",
+      "publishedAt": "2026-10-24T17:11:04.096Z",
+      "publishedAtMs": 1792861864097,
+      "presentation": {
+        "category": "Anime",
+        "purpose": "Turkish & Subbed Anime in 1080p MP4 (Death Note, One Piece, etc.)",
+        "recommended": true,
+        "language": "Turkish Sub/Dub",
+        "languages": [
+          "sub",
+          "dub"
+        ],
+        "iconUrl": "https://www.google.com/s2/favicons?domain=animland.net&sz=128"
+      },
+      "changelog": [
+        "1.0.0: Dedicated Animland module with direct 1080p MP4 streams and multilingual subtitles."
+      ]
+    },
+    {
+      "moduleId": "hdfilmizle-source-v1",
+      "moduleFamilyId": "hdfilmizle_source_v1",
+      "moduleIdentity": "SP-VID-993-HDFL",
+      "moduleIdentityNumber": 993,
+      "contentType": "video",
+      "version": "1.0.0",
+      "moduleVersion": "1.0.0",
+      "releaseTrack": "stable",
+      "file": "modules/hdfilmizle-source-v1.zip",
+      "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/hdfilmizle-source-v1.zip",
+      "sha256": "f3d10e3a7ed11be6d94d8cfb9b708d68b1be1529cc92aca6f5f7c3e43e03ee7c",
+      "publishedAt": "2026-10-24T17:11:04.096Z",
+      "publishedAtMs": 1792861864097,
+      "presentation": {
+        "category": "Movies & TV",
+        "purpose": "Turkish Movies & TV Series with Dedicated Sub & Dub Tracks (Vidrame HLS)",
+        "recommended": true,
+        "language": "Turkish Sub/Dub",
+        "languages": [
+          "sub",
+          "dub"
+        ],
+        "iconUrl": "https://www.google.com/s2/favicons?domain=www.hdfilmizle.live&sz=128"
+      },
+      "changelog": [
+        "1.0.0: Dedicated HDFilmizle module with separate Original English Audio (Altyazılı) and Turkish Dubbed streams."
+      ]
+    },
+    {
+      "moduleId": "erenime-source-v1",
+      "moduleFamilyId": "erenime_source_v1",
+      "moduleIdentity": "SP-VID-994-ERNM",
+      "moduleIdentityNumber": 994,
+      "contentType": "video",
+      "version": "1.0.0",
+      "moduleVersion": "1.0.0",
+      "releaseTrack": "stable",
+      "file": "modules/erenime-source-v1.zip",
+      "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/erenime-source-v1.zip",
+      "sha256": "82e05edb9ee5fca4607f2d402817e12ecb04fcd05f75fc0f36d80cfe45d63a18",
+      "publishedAt": "2026-10-24T17:11:04.096Z",
+      "publishedAtMs": 1792861864097,
+      "presentation": {
+        "category": "Anime",
+        "purpose": "Turkish Subbed Anime with Direct 1080p HLS Streams (No P2P / Turnstile)",
+        "recommended": true,
+        "language": "Turkish Sub/Dub",
+        "languages": [
+          "sub",
+          "dub"
+        ],
+        "iconUrl": "https://www.google.com/s2/favicons?domain=erenime.com&sz=128"
+      },
+      "changelog": [
+        "1.0.0: Dedicated Erenime module with direct 1080p HLS manifest streaming."
+      ]
+    },
+    {
+      "moduleId": "dramavakti-source-v1",
+      "moduleFamilyId": "dramavakti_source_v1",
+      "moduleIdentity": "SP-VID-995-DRMV",
+      "moduleIdentityNumber": 995,
+      "contentType": "video",
+      "version": "1.0.0",
+      "moduleVersion": "1.0.0",
+      "releaseTrack": "stable",
+      "file": "modules/dramavakti-source-v1.zip",
+      "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dramavakti-source-v1.zip",
+      "sha256": "670ad7dd29fbcf19a5718a9c295e07e4152a5722343afc893b8c1a7f1305ef5e",
+      "publishedAt": "2026-10-24T17:11:04.096Z",
+      "publishedAtMs": 1792861864097,
+      "presentation": {
+        "category": "Asian Drama",
+        "purpose": "Korean, Chinese & Asian Dramas with Direct MP4 Streams (No P2P / Turnstile)",
+        "recommended": true,
+        "language": "Turkish Sub/Dub",
+        "languages": [
+          "sub",
+          "dub"
+        ],
+        "iconUrl": "https://www.google.com/s2/favicons?domain=dramavakti.com&sz=128"
+      },
+      "changelog": [
+        "1.0.0: Dedicated DramaVakti module for Asian Dramas with direct HTML5 MP4 playback."
+      ]
+    },
+    {
+      "moduleId": "animeniz-source-v1",
+      "moduleFamilyId": "animeniz_source_v1",
+      "moduleIdentity": "SP-VID-996-ANMZ",
+      "moduleIdentityNumber": 996,
+      "contentType": "video",
+      "version": "1.0.0",
+      "moduleVersion": "1.0.0",
+      "releaseTrack": "stable",
+      "file": "modules/animeniz-source-v1.zip",
+      "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animeniz-source-v1.zip",
+      "sha256": "d582f2d73484a361145ce93c21477600142347241e1d6b4fa441df27dd76362d",
+      "publishedAt": "2026-10-24T17:11:04.096Z",
+      "publishedAtMs": 1792861864097,
+      "presentation": {
+        "category": "Anime",
+        "purpose": "Turkish Subbed Anime with Direct 1080p MP4 Streams (No P2P / Turnstile)",
+        "recommended": true,
+        "language": "Turkish Sub/Dub",
+        "languages": [
+          "sub",
+          "dub"
+        ],
+        "iconUrl": "https://www.google.com/s2/favicons?domain=animeniz.com&sz=128"
+      },
+      "changelog": [
+        "1.0.0: Dedicated Animeniz module with direct 1080p MP4 endpoint playback."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "id": "erenime-source-v1",
+  "name": "Erenime",
+  "contentType": "video",
+  "language": "tr",
+  "contractVersion": 3,
+  "moduleVersion": "1.0.0",
+  "version": "1.0.0",
+  "moduleFamilyId": "erenime_source_v1",
+  "moduleIdentity": "SP-VID-994-ERNM",
+  "moduleIdentityNumber": 994,
+  "releaseTrack": "stable",
+  "presentation": {
+    "category": "Anime",
+    "purpose": "Turkish Subbed Anime with Direct 1080p HLS Streams (No P2P / Turnstile)",
+    "recommended": true,
+    "language": "Turkish Sub/Dub",
+    "languages": [
+      "sub"
+    ],
+    "iconUrl": "https://www.google.com/s2/favicons?domain=erenime.com&sz=128"
+  },
+  "config": {
+    "language": "Turkish",
+    "contentLanguage": "tr",
+    "baseUrl": "https://erenime.com",
+    "presentation": {
+      "category": "Anime",
+      "purpose": "Turkish Subbed Anime with Direct 1080p HLS Streams (No P2P / Turnstile)",
+      "recommended": true,
+      "language": "Turkish Sub/Dub",
+      "languages": [
+        "sub"
+      ],
+      "iconUrl": "https://www.google.com/s2/favicons?domain=erenime.com&sz=128"
+    },
+    "runtime": {
+      "entry": "index.js",
+      "mode": "local"
+    },
+    "capabilities": {
+      "discovery_v1": true
+    },
+    "caps": {
+      "homeMaxResults": 40,
+      "maxResponseBytes": 5242880,
+      "timeoutMs": 30000,
+      "maxConcurrentRequests": 4
+    }
+  }
+}

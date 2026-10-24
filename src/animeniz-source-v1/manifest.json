@@ -1,0 +1,51 @@
+{
+  "id": "animeniz-source-v1",
+  "name": "Animeniz",
+  "contentType": "video",
+  "language": "tr",
+  "contractVersion": 3,
+  "moduleVersion": "1.0.0",
+  "version": "1.0.0",
+  "moduleFamilyId": "animeniz_source_v1",
+  "moduleIdentity": "SP-VID-996-ANMZ",
+  "moduleIdentityNumber": 996,
+  "releaseTrack": "stable",
+  "presentation": {
+    "category": "Anime",
+    "purpose": "Turkish Subbed Anime with Direct 1080p MP4 Streams (No P2P / Turnstile)",
+    "recommended": true,
+    "language": "Turkish Sub/Dub",
+    "languages": [
+      "sub"
+    ],
+    "iconUrl": "https://www.google.com/s2/favicons?domain=animeniz.com&sz=128"
+  },
+  "config": {
+    "language": "Turkish",
+    "contentLanguage": "tr",
+    "baseUrl": "https://animeniz.com",
+    "presentation": {
+      "category": "Anime",
+      "purpose": "Turkish Subbed Anime with Direct 1080p MP4 Streams (No P2P / Turnstile)",
+      "recommended": true,
+      "language": "Turkish Sub/Dub",
+      "languages": [
+        "sub"
+      ],
+      "iconUrl": "https://www.google.com/s2/favicons?domain=animeniz.com&sz=128"
+    },
+    "runtime": {
+      "entry": "index.js",
+      "mode": "local"
+    },
+    "capabilities": {
+      "discovery_v1": true
+    },
+    "caps": {
+      "homeMaxResults": 40,
+      "maxResponseBytes": 5242880,
+      "timeoutMs": 30000,
+      "maxConcurrentRequests": 4
+    }
+  }
+}
