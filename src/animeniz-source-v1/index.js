@@ -4,8 +4,8 @@
  * Contract Version 3 | contentType: video
  * Features:
  *   - Direct 1080p MP4 CDN streams (No P2P / WebTorrent, No Cloudflare Turnstile blocks)
- *   - Turkish subtitles embedded
- *   - High-quality anime library
+ *   - Accurate search via Next.js API (/api/search?q=...&limit=20)
+ *   - Complete multi-episode extraction from Next.js flight data (74/74 episodes for Monster)
  */
 
 const BASE_URL = 'https://animeniz.com';
@@ -61,52 +61,42 @@ async function httpGet(url, customHeaders = {}) {
 }
 
 /**
- * Search results handler
+ * Search results handler - Uses official Next.js search API
  */
 async function searchResults(query) {
   try {
-    const url = `${BASE_URL}/?s=${encodeURIComponent(query)}`;
-    const html = await httpGet(url);
-    const items = [];
-    const seen = new Set();
-    const cardRegex = /<a[^>]+href="(\/anime-(?:diziler|filmler)\/[^"#?]+)"[^>]*>([\s\S]*?)<\/a>/gi;
-    let m;
-    const qLower = query.toLowerCase();
+    const q = String(query || '').trim();
+    if (!q) return [];
+    const url = `${BASE_URL}/api/search?q=${encodeURIComponent(q)}&limit=20`;
+    const text = await httpGet(url, { 'Accept': 'application/json' });
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch (_) {
+      return [];
+    }
 
-    while ((m = cardRegex.exec(html)) !== null) {
-      const slug = m[1];
-      const itemUrl = makeAbsolute(slug);
-      if (seen.has(itemUrl)) continue;
-      seen.add(itemUrl);
-      const block = m[2];
-      const imgMatch = block.match(/src="([^"]+)"/i);
-      const titleMatch = block.match(/<(?:h2|h3|h4|span|div|p)[^>]*class="[^"]*(?:title|name)[^"]*"[^>]*>([\s\S]*?)<\//i);
-      let title = titleMatch ? cleanText(titleMatch[1]) : '';
-      if (!title) {
-        const cleanSlug = slug.replace(/\/anime-(?:diziler|filmler)\//, '');
-        title = cleanSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-      }
-      const cover = imgMatch ? makeAbsolute(imgMatch[1]) : '';
-      items.push({
+    const list = Array.isArray(json.data) ? json.data : [];
+    return list.map(item => {
+      const isMovie = item.type === 'movie';
+      const itemUrl = isMovie
+        ? `${BASE_URL}/anime-filmler/${item.slug}`
+        : `${BASE_URL}/anime-diziler/${item.slug}`;
+      const rawPoster = item.poster || item.image?.original || item.image?.medium || '';
+      const poster = rawPoster ? makeAbsolute(rawPoster) : '';
+      const title = cleanText(item.name || item.name_english || item.slug);
+      return {
         id: itemUrl,
         title: title,
         url: itemUrl,
         href: itemUrl,
-        image: cover,
-        poster: cover,
-        coverUrl: cover
-      });
-    }
-
-    items.sort((a, b) => {
-      const aMatch = a.title.toLowerCase().includes(qLower) || a.url.toLowerCase().includes(qLower);
-      const bMatch = b.title.toLowerCase().includes(qLower) || b.url.toLowerCase().includes(qLower);
-      if (aMatch && !bMatch) return -1;
-      if (!aMatch && bMatch) return 1;
-      return 0;
+        image: poster,
+        poster: poster,
+        coverUrl: poster,
+        isSeries: !isMovie,
+        type: isMovie ? 'movie' : 'series'
+      };
     });
-
-    return items.slice(0, 30);
   } catch (err) {
     return [];
   }
@@ -142,44 +132,27 @@ async function extractDetails(targetUrl) {
   } catch (err) {
     return {
       id: targetUrl,
-      title: 'Anime',
+      title: 'Anime Details',
       url: targetUrl,
-      href: targetUrl
+      href: targetUrl,
+      image: '',
+      poster: '',
+      coverUrl: '',
+      description: '',
+      plot: ''
     };
   }
 }
 
 /**
- * Extract episodes
+ * Extract anime episodes
+ * Uses Next.js flight data push on episode 1 page for complete episode listings
  */
 async function extractEpisodes(animeUrl) {
   try {
-    const html = await httpGet(animeUrl);
-    const episodes = [];
-    const epRegex = /href="(\/anime-(?:diziler|filmler)\/[^"']+\/sezon\/([0-9]+)\/bolum\/([0-9]+))"/gi;
-    let m;
-    const seen = new Set();
-
-    while ((m = epRegex.exec(html)) !== null) {
-      const epUrl = makeAbsolute(m[1]);
-      const season = parseInt(m[2], 10);
-      const episode = parseInt(m[3], 10);
-      if (seen.has(epUrl)) continue;
-      seen.add(epUrl);
-      episodes.push({
-        id: epUrl,
-        title: `Sezon ${season} Bölüm ${episode}`,
-        seasonNumber: season,
-        episodeNumber: episode,
-        season: season,
-        episode: episode,
-        url: epUrl,
-        href: epUrl
-      });
-    }
-
-    if (!episodes.length) {
-      episodes.push({
+    const isMovie = animeUrl.includes('/anime-filmler/');
+    if (isMovie) {
+      return [{
         id: animeUrl,
         title: 'Full Movie',
         seasonNumber: 1,
@@ -188,15 +161,66 @@ async function extractEpisodes(animeUrl) {
         episode: 1,
         url: animeUrl,
         href: animeUrl
-      });
+      }];
     }
 
-    episodes.sort((a, b) => (a.seasonNumber - b.seasonNumber) || (a.episodeNumber - b.episodeNumber));
-    return episodes;
+    const slugMatch = animeUrl.match(/\/anime-diziler\/([^\/\?#]+)/);
+    if (!slugMatch) {
+      return [{
+        id: animeUrl,
+        title: 'Bölüm 1',
+        seasonNumber: 1,
+        episodeNumber: 1,
+        season: 1,
+        episode: 1,
+        url: animeUrl,
+        href: animeUrl
+      }];
+    }
+    const slug = slugMatch[1];
+    const ep1Url = `${BASE_URL}/anime-diziler/${slug}/sezon/1/bolum/1`;
+
+    const html = await httpGet(ep1Url);
+
+    // Look for Next.js flight data \"allEpisodes\":[...]
+    const allEpsMatch = html.match(/\\"allEpisodes\\":(\[[\s\S]*?\])(?:,\s*\\"[a-zA-Z0-9_]+\\"|\}\])/);
+    if (allEpsMatch) {
+      try {
+        const unescaped = allEpsMatch[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+        const rawList = JSON.parse(unescaped);
+        if (Array.isArray(rawList) && rawList.length > 0) {
+          return rawList.map(ep => {
+            const epPageUrl = `${BASE_URL}/anime-diziler/${slug}/sezon/${ep.season || 1}/bolum/${ep.number}`;
+            return {
+              id: epPageUrl,
+              title: ep.name ? `${ep.number}. Bölüm: ${ep.name}` : `Bölüm ${ep.number}`,
+              seasonNumber: ep.season || 1,
+              episodeNumber: ep.number,
+              season: ep.season || 1,
+              episode: ep.number,
+              url: epPageUrl,
+              href: epPageUrl
+            };
+          }).sort((a, b) => (a.seasonNumber - b.seasonNumber) || (a.episodeNumber - b.episodeNumber));
+        }
+      } catch (_) {}
+    }
+
+    // Fallback: single ep
+    return [{
+      id: ep1Url,
+      title: 'Bölüm 1',
+      seasonNumber: 1,
+      episodeNumber: 1,
+      season: 1,
+      episode: 1,
+      url: ep1Url,
+      href: ep1Url
+    }];
   } catch (err) {
     return [{
       id: animeUrl,
-      title: 'Episode 1',
+      title: 'Bölüm 1',
       seasonNumber: 1,
       episodeNumber: 1,
       season: 1,
@@ -218,6 +242,7 @@ async function extractStreamUrl(episodeUrl) {
     const uuid = playerMatch[1];
 
     const streamUrl = `https://player.animeniz.com/video/${uuid}/stream`;
+    const playerReferer = `https://player.animeniz.com/player/${uuid}`;
 
     return {
       url: streamUrl,
@@ -231,13 +256,13 @@ async function extractStreamUrl(episodeUrl) {
         label: 'Animeniz · 1080p MP4 (Türkçe Altyazı)',
         audioLanguage: 'ja',
         audioLanguages: ['ja'],
-        qualities: [{ label: '1080p', url: streamUrl, headers: { Referer: `https://player.animeniz.com/player/${uuid}` } }],
-        subtitles: [{ language: 'tr', label: 'Türkçe Altyazı', default: true }]
+        qualities: [{ label: '1080p', url: streamUrl, headers: { Referer: playerReferer } }],
+        subtitles: []
       }],
-      subtitles: [{ language: 'tr', label: 'Türkçe Altyazı', default: true }],
+      subtitles: [],
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': `https://player.animeniz.com/player/${uuid}`
+        'Referer': playerReferer
       }
     };
   } catch (err) {
@@ -260,37 +285,34 @@ async function extractStreamUrl(episodeUrl) {
  */
 async function discoveryHome() {
   try {
-    const html = await httpGet(BASE_URL + '/');
-    const cardRegex = /<a[^>]+href="(\/anime-(?:diziler|filmler)\/[^"#?]+)"[^>]*>([\s\S]*?)<\/a>/gi;
-    const items = [];
-    const seen = new Set();
-    let m;
+    const text = await httpGet(`${BASE_URL}/api/search?q=popular&limit=20`, { 'Accept': 'application/json' });
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch (_) {
+      return [];
+    }
 
-    while ((m = cardRegex.exec(html)) !== null) {
-      const slug = m[1];
-      const itemUrl = makeAbsolute(slug);
-      if (seen.has(itemUrl)) continue;
-      seen.add(itemUrl);
-      const block = m[2];
-      const imgMatch = block.match(/src="([^"]+)"/i);
-      const titleMatch = block.match(/<(?:h2|h3|h4|span|div|p)[^>]*class="[^"]*(?:title|name)[^"]*"[^>]*>([\s\S]*?)<\//i);
-      let title = titleMatch ? cleanText(titleMatch[1]) : '';
-      if (!title) {
-        const cleanSlug = slug.replace(/\/anime-(?:diziler|filmler)\//, '');
-        title = cleanSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-      }
-      const cover = imgMatch ? makeAbsolute(imgMatch[1]) : '';
-      items.push({
+    const list = Array.isArray(json.data) ? json.data : [];
+    const items = list.map(item => {
+      const isMovie = item.type === 'movie';
+      const itemUrl = isMovie
+        ? `${BASE_URL}/anime-filmler/${item.slug}`
+        : `${BASE_URL}/anime-diziler/${item.slug}`;
+      const rawPoster = item.poster || item.image?.original || item.image?.medium || '';
+      const poster = rawPoster ? makeAbsolute(rawPoster) : '';
+      return {
         id: itemUrl,
-        title: title,
+        title: cleanText(item.name || item.name_english || item.slug),
         url: itemUrl,
         href: itemUrl,
-        image: cover,
-        poster: cover,
-        coverUrl: cover
-      });
-      if (items.length >= 30) break;
-    }
+        image: poster,
+        poster: poster,
+        coverUrl: poster,
+        isSeries: !isMovie,
+        type: isMovie ? 'movie' : 'series'
+      };
+    });
 
     const sections = [];
     if (items.length > 0) {

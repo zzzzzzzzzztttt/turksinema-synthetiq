@@ -1,40 +1,40 @@
 {
-  "id": "hdfilmizle-source-v1",
-  "name": "HDFilmizle",
+  "id": "dizigom-source-v1",
+  "name": "Dizigom",
   "contentType": "video",
   "language": "tr",
   "contractVersion": 3,
   "moduleVersion": "1.0.0",
   "version": "1.0.0",
-  "moduleFamilyId": "hdfilmizle_source_v1",
-  "moduleIdentity": "SP-VID-993-HDFL",
+  "moduleFamilyId": "dizigom_source_v1",
+  "moduleIdentity": "SP-VID-993-DZGM",
   "moduleIdentityNumber": 993,
   "releaseTrack": "stable",
   "presentation": {
     "category": "Movies & TV",
-    "purpose": "Turkish Movies & TV Series with Dedicated Sub & Dub Tracks (Vidrame HLS)",
+    "purpose": "Turkish & Global Series, Asian Dramas & Movies with Dual Audio & Inlined WebVTT Subtitles",
     "recommended": true,
     "language": "Turkish Sub/Dub",
     "languages": [
       "sub",
       "dub"
     ],
-    "iconUrl": "https://www.google.com/s2/favicons?domain=www.hdfilmizle.live&sz=128"
+    "iconUrl": "https://www.google.com/s2/favicons?domain=dizigom3.top&sz=128"
   },
   "config": {
     "language": "Turkish",
     "contentLanguage": "tr",
-    "baseUrl": "https://www.hdfilmizle.live",
+    "baseUrl": "https://dizigom3.top",
     "presentation": {
       "category": "Movies & TV",
-      "purpose": "Turkish Movies & TV Series with Dedicated Sub & Dub Tracks (Vidrame HLS)",
+      "purpose": "Turkish & Global Series, Asian Dramas & Movies with Dual Audio & Inlined WebVTT Subtitles",
       "recommended": true,
       "language": "Turkish Sub/Dub",
       "languages": [
         "sub",
         "dub"
       ],
-      "iconUrl": "https://www.google.com/s2/favicons?domain=www.hdfilmizle.live&sz=128"
+      "iconUrl": "https://www.google.com/s2/favicons?domain=dizigom3.top&sz=128"
     },
     "runtime": {
       "entry": "index.js",

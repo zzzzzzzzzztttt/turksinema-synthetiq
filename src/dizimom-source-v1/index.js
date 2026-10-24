@@ -211,12 +211,7 @@ async function discoveryFeed(feedId, page) {
 async function searchResults(query, page = 1) {
   try {
     const q = String(query || '').trim();
-    if (!q) {
-      const home = await discoveryHome();
-      const all = [];
-      (home.sections || []).forEach(s => (s.items || []).forEach(it => all.push(it)));
-      return all.slice(0, 30);
-    }
+    if (!q) return [];
 
     const searchUrl = `${BASE_URL}/ara?q=${encodeURIComponent(q)}`;
     const html = await httpGet(searchUrl, { Referer: BASE_URL });

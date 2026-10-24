@@ -163,12 +163,7 @@ async function discoveryFeed(feedId, page) {
 async function searchResults(query, page = 1) {
   try {
     const q = String(query || '').trim();
-    if (!q) {
-      const home = await discoveryHome();
-      const all = [];
-      (home.sections || []).forEach(s => (s.items || []).forEach(it => all.push(it)));
-      return all.slice(0, 30);
-    }
+    if (!q) return [];
 
     const searchUrl = `${API_URL}/page/search?value=${encodeURIComponent(q)}&page=${page}`;
     const raw = await httpGet(searchUrl);
@@ -338,8 +333,16 @@ async function extractStreamUrl(targetUrl, want = 'sub') {
 
     const subtitles = [];
     if (Array.isArray(parsed.subtitles)) {
-      parsed.subtitles.forEach(s => {
+      for (const s of parsed.subtitles) {
         if (s && s.link) {
+          let vttContent = '';
+          try {
+            const rawVtt = await httpGet(s.link, { Referer: BASE_URL + '/', Origin: BASE_URL });
+            if (rawVtt && rawVtt.indexOf('-->') !== -1) {
+              vttContent = rawVtt.replace(/^\uFEFF/, '').trim();
+            }
+          } catch (_) {}
+
           subtitles.push({
             id: s.link,
             url: s.link,
@@ -349,10 +352,15 @@ async function extractStreamUrl(targetUrl, want = 'sub') {
             lang: s.group || 'tr',
             kind: 'subtitle',
             default: s.group === 'tr',
-            headers: { Referer: BASE_URL + '/' }
+            content: vttContent || undefined,
+            format: 'vtt',
+            headers: {
+              Referer: BASE_URL + '/',
+              Origin: BASE_URL
+            }
           });
         }
-      });
+      }
     }
 
     const qualityLabel = '1080p';
@@ -397,10 +405,20 @@ async function extractStreamUrl(targetUrl, want = 'sub') {
   }
 }
 
+async function extractSubtitles(episodeHref, language = 'tr') {
+  try {
+    const stream = await extractStreamUrl(episodeHref);
+    return stream.subtitles || [];
+  } catch (_) {
+    return [];
+  }
+}
+
 // Module Exports
 globalThis.searchResults = searchResults;
 globalThis.extractDetails = extractDetails;
 globalThis.extractEpisodes = extractEpisodes;
+globalThis.extractSubtitles = extractSubtitles;
 globalThis.extractStreamUrl = extractStreamUrl;
 globalThis.discoveryHome = discoveryHome;
 globalThis.discoveryFeed = discoveryFeed;
