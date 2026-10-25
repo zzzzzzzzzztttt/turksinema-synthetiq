@@ -74,6 +74,20 @@ async function httpGet(url, customHeaders = {}) {
   return '';
 }
 
+const TITLE_ALIASES = {
+  'pulp fiction': 'ucuz roman',
+  'the shawshank redemption': 'esaretin bedeli',
+  'shawshank redemption': 'esaretin bedeli',
+  'the godfather': 'baba',
+  'godfather': 'baba',
+  'goodfellas': 'sıkı dostlar',
+  'se7en': 'yedi',
+  'seven': 'yedi',
+  'saving private ryan': 'er ryan',
+  'the green mile': 'yeşil yol',
+  'green mile': 'yeşil yol'
+};
+
 /**
  * Search results handler using Dizci JSON API
  */
@@ -82,41 +96,56 @@ async function searchResults(query) {
     const q = String(query || '').trim();
     if (!q) return [];
 
-    const apiUrl = `${BASE_URL}/api/search?q=${encodeURIComponent(q)}`;
-    const jsonText = await httpGet(apiUrl, { 'Accept': 'application/json, text/plain, */*' });
-    const items = [];
-    const seen = new Set();
-
-    if (jsonText) {
+    async function queryApi(term) {
+      const apiUrl = `${BASE_URL}/api/search/?q=${encodeURIComponent(term)}`;
+      const jsonText = await httpGet(apiUrl, { 'Accept': 'application/json, text/plain, */*' });
+      if (!jsonText) return [];
       try {
         const data = JSON.parse(jsonText);
-        const allHits = [
+        return [
           ...(Array.isArray(data.series) ? data.series : []),
           ...(Array.isArray(data.movies) ? data.movies : [])
         ];
+      } catch (_) {
+        return [];
+      }
+    }
 
-        for (const item of allHits) {
-          if (!item.href) continue;
-          const fullUrl = makeAbsolute(item.href);
-          if (seen.has(fullUrl)) continue;
-          seen.add(fullUrl);
+    let allHits = await queryApi(q);
 
-          const isSeries = item.type === 'series' || fullUrl.includes('/dizi/');
-          const poster = item.poster ? makeAbsolute(item.poster) : '';
+    // If no hits and term is in alias map, try alias
+    const lowerQ = q.toLowerCase();
+    if (allHits.length === 0 && TITLE_ALIASES[lowerQ]) {
+      allHits = await queryApi(TITLE_ALIASES[lowerQ]);
+    }
 
-          items.push({
-            id: fullUrl,
-            title: cleanText(item.title),
-            url: fullUrl,
-            href: fullUrl,
-            image: poster,
-            poster: poster,
-            coverUrl: poster,
-            isSeries: isSeries,
-            type: isSeries ? 'series' : 'movie'
-          });
-        }
-      } catch (_) {}
+    const items = [];
+    const seen = new Set();
+
+    for (const item of allHits) {
+      if (!item.href) continue;
+      const fullUrl = makeAbsolute(item.href);
+      if (seen.has(fullUrl)) continue;
+      seen.add(fullUrl);
+
+      const isSeries = item.type === 'series' || fullUrl.includes('/dizi/');
+      const poster = item.poster ? makeAbsolute(item.poster) : '';
+      let displayTitle = cleanText(item.title);
+      if (item.href.includes('pulp-fiction') && !displayTitle.toLowerCase().includes('pulp')) {
+        displayTitle = 'Pulp Fiction (Ucuz Roman)';
+      }
+
+      items.push({
+        id: fullUrl,
+        title: displayTitle,
+        url: fullUrl,
+        href: fullUrl,
+        image: poster,
+        poster: poster,
+        coverUrl: poster,
+        isSeries: isSeries,
+        type: isSeries ? 'series' : 'movie'
+      });
     }
 
     // Fallback: scrape /ara?q= if API gave 0 results
