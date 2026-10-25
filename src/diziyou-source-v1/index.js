@@ -272,7 +272,7 @@ async function extractEpisodes(seriesUrl) {
 }
 
 /**
- * Extract video stream handler
+ * Extract video stream handler with inlined WebVTT subtitles
  */
 async function extractStreamUrl(episodeUrl) {
   try {
@@ -289,6 +289,78 @@ async function extractStreamUrl(episodeUrl) {
 
     if (!playerId) {
       throw new Error('Diziyou player ID not found on episode page');
+    }
+
+    // Fetch player HTML to extract track tags and subtitle endpoints
+    const playerUrl = `${BASE_URL}/player/${playerId}.html`;
+    const playerHtml = await httpRequest(playerUrl, {
+      headers: { 'Referer': targetUrl }
+    });
+
+    const trackRegex = /<track[^>]+src=["']([^"']+)["'][^>]*>/gi;
+    let tm;
+    const rawTracks = [];
+    while ((tm = trackRegex.exec(playerHtml)) !== null) {
+      const tag = tm[0];
+      const src = tm[1];
+      const labelMatch = tag.match(/label=["']([^"']+)["']/i);
+      const langMatch = tag.match(/srclang=["']([^"']+)["']/i);
+      const isDefault = tag.includes('default');
+      rawTracks.push({
+        src,
+        label: labelMatch ? labelMatch[1] : (src.includes('/tr.') ? 'Türkçe' : 'English'),
+        lang: langMatch ? langMatch[1] : (src.includes('/tr.') ? 'tr' : 'en'),
+        isDefault
+      });
+    }
+
+    // Fallback if no track tags in player HTML
+    if (rawTracks.length === 0) {
+      rawTracks.push({
+        src: `https://storage.diziyou.one/subtitles/${playerId}/tr.vtt`,
+        label: 'Türkçe',
+        lang: 'tr',
+        isDefault: true
+      });
+      rawTracks.push({
+        src: `https://storage.diziyou.one/subtitles/${playerId}/en.vtt`,
+        label: 'English',
+        lang: 'en',
+        isDefault: false
+      });
+    }
+
+    // Fetch and inline WebVTT content for iOS AVPlayer
+    const subtitles = [];
+    for (const t of rawTracks) {
+      try {
+        const vttRaw = await httpRequest(t.src, {
+          headers: { 'Referer': BASE_URL + '/' }
+        });
+        if (vttRaw) {
+          let cleanVtt = String(vttRaw).replace(/^\uFEFF/, '').trim();
+          if (!cleanVtt.startsWith('WEBVTT')) {
+            cleanVtt = 'WEBVTT\n\n' + cleanVtt;
+          }
+
+          subtitles.push({
+            id: t.src,
+            url: t.src,
+            file: t.src,
+            label: t.label,
+            language: t.lang,
+            lang: t.lang,
+            kind: 'captions',
+            default: t.isDefault,
+            content: cleanVtt,
+            format: 'vtt',
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'Referer': BASE_URL + '/'
+            }
+          });
+        }
+      } catch (_) {}
     }
 
     const streamUrl = `https://storage.diziyou.one/episodes/${playerId}/play.m3u8`;
@@ -312,7 +384,7 @@ async function extractStreamUrl(episodeUrl) {
         { label: '720p', url: streamUrl },
         { label: '480p', url: streamUrl }
       ],
-      subtitles: []
+      subtitles: subtitles
     }];
 
     const streams = [
@@ -334,7 +406,7 @@ async function extractStreamUrl(episodeUrl) {
         { label: '480p', url: streamUrl }
       ],
       servers: servers,
-      subtitles: [],
+      subtitles: subtitles,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Referer': BASE_URL + '/'
@@ -352,8 +424,13 @@ async function extractStreamUrl(episodeUrl) {
 /**
  * Dedicated Subtitles extractor
  */
-async function extractSubtitles() {
-  return [];
+async function extractSubtitles(episodeUrl) {
+  try {
+    const stream = await extractStreamUrl(episodeUrl);
+    return stream.subtitles || [];
+  } catch (_) {
+    return [];
+  }
 }
 
 /**
