@@ -6,6 +6,7 @@ In compliance with Synthetiq Player's architecture (strict 1 site per module ZIP
 
 | Module | Target Provider | Category | Features | Direct ZIP Link |
 |---|---|---|---|---|
+| **HDFilmizle Source** (`hdfilmizle-source-v1`) | `hdfilmizle.best` | Movies & TV Series | **Full HD Movies & Series with Dynamic Dual Audio (Original English & Turkish Dub) + Multi-Language Subtitles (Inlined WebVTT)**. Massive catalogue, no Cloudflare blocks. | [Download ZIP](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/hdfilmizle-source-v1.zip) |
 | **Dizci Source** (`dizci-source-v1`) | `dizci.net` | Movies & TV Series | **Dedicated "Altyazılı" (English Original Audio) & "Dublaj" (Turkish Dub)** streams via VidMoly & Dzen. Instant JSON search. | [Download ZIP](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizci-source-v1.zip) |
 | **Diziyou Source** (`diziyou-source-v1`) | `diziyou.one` | TV Series (Altyazılı) | **Clean English Original Audio with Hardcoded Turkish Subtitles** via direct adaptive HLS from `storage.diziyou.one`. | [Download ZIP](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/diziyou-source-v1.zip) |
 | **DiziMom Source** (`dizimom-source-v1`) | `ddizimom.net` | Movies & TV Series | Turkish Movies & Series with Turkish Dub (`Türkçe Dublaj`) | [Download ZIP](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizimom-source-v1.zip) |
@@ -20,6 +21,7 @@ In compliance with Synthetiq Player's architecture (strict 1 site per module ZIP
 
 ### Option 1: Direct Module Import (Recommended)
 1. On your iPhone, download any or all of the module ZIP files:
+   - [hdfilmizle-source-v1.zip](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/hdfilmizle-source-v1.zip)
    - [dizci-source-v1.zip](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizci-source-v1.zip)
    - [diziyou-source-v1.zip](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/diziyou-source-v1.zip)
    - [dizimom-source-v1.zip](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizimom-source-v1.zip)
@@ -44,4 +46,4 @@ In compliance with Synthetiq Player's architecture (strict 1 site per module ZIP
    ```text
    https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/repository.json
    ```
-4. All 7 modules will appear in your repository list for 1-tap installation.
+4. All 8 modules will appear in your repository list for 1-tap installation.
