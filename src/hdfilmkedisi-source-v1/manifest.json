@@ -1,0 +1,53 @@
+{
+  "id": "hdfilmkedisi-source-v1",
+  "name": "HDFilmKedisi",
+  "contentType": "video",
+  "language": "tr",
+  "contractVersion": 3,
+  "moduleVersion": "1.0.0",
+  "version": "1.0.0",
+  "moduleFamilyId": "hdfilmkedisi_source_v1",
+  "moduleIdentity": "SP-VID-999-HDFK",
+  "moduleIdentityNumber": 999,
+  "releaseTrack": "stable",
+  "presentation": {
+    "category": "Movies & TV",
+    "purpose": "Turkish & Western Movies with Native Apple HLS Dual Audio (Original & Turkish Dub) & Subtitles",
+    "recommended": true,
+    "language": "Turkish Sub/Dub",
+    "languages": [
+      "sub",
+      "dub"
+    ],
+    "iconUrl": "https://www.google.com/s2/favicons?domain=hdfilmkedisi.com&sz=128"
+  },
+  "config": {
+    "language": "Turkish",
+    "contentLanguage": "tr",
+    "baseUrl": "https://hdfilmkedisi.com",
+    "presentation": {
+      "category": "Movies & TV",
+      "purpose": "Turkish & Western Movies with Native Apple HLS Dual Audio (Original & Turkish Dub) & Subtitles",
+      "recommended": true,
+      "language": "Turkish Sub/Dub",
+      "languages": [
+        "sub",
+        "dub"
+      ],
+      "iconUrl": "https://www.google.com/s2/favicons?domain=hdfilmkedisi.com&sz=128"
+    },
+    "runtime": {
+      "entry": "index.js",
+      "mode": "local"
+    },
+    "capabilities": {
+      "discovery_v1": true
+    },
+    "caps": {
+      "homeMaxResults": 40,
+      "maxResponseBytes": 5242880,
+      "timeoutMs": 30000,
+      "maxConcurrentRequests": 4
+    }
+  }
+}
