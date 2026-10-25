@@ -3,12 +3,13 @@
  * Target: HD Film Cehennemi (https://www.hdfilmcehennemi2.biz)
  * Contract Version 3 | contentType: video
  * Features:
- *   - Movies & TV Series with VidMoly HLS streams
+ *   - Movies & TV Series with VidMoly and VIP (VidLoad) HLS streams
+ *   - Dedicated Subtitled (Original Audio + Turkish CC) and Dubbed (Turkish Audio) stream isolation
+ *   - Automatic fallback between VIP and Moly servers with in-player server switching
+ *   - Inlined WebVTT subtitles extracted from both VIP and VidMoly
  *   - Fast Meilisearch JSON search (/api/search/?q=)
  *   - Automatic English title matching & alias tagging for Synthetiq search filters
- *   - Dedicated Subtitled (Original Audio + Turkish CC) and Dubbed (Turkish Audio) stream isolation
- *   - Zero dual-audio conflicts on iOS AVPlayer (selects dedicated audio variant)
- *   - Direct extraction of inlined WebVTT subtitles
+ *   - Pure JavaScript RFC 4648 Base64 decoder (zero Buffer/atob dependencies for iOS JSC)
  *   - Universal support for string URLs, episode objects, and series auto-routing
  */
 
@@ -437,7 +438,7 @@ async function extractEpisodes(pageUrl) {
 }
 
 /**
- * Extract HLS stream and subtitles from VidMoly (with DUAL audio track separation)
+ * Extract HLS stream and inlined WebVTT subtitles supporting VIP and VidMoly
  */
 async function extractStreamUrl(pageUrl, lang) {
   try {
@@ -515,145 +516,261 @@ async function extractStreamUrl(pageUrl, lang) {
       throw new Error(`Failed to parse videoPlayerData: ${e.message}`);
     }
 
-    // Route language
-    let sourceList = [];
-    let isDual = false;
+    // Collect all available video sources with category tags
+    const allSources = [];
+    const searchOrder = want === 'dub' 
+      ? ['tr', 'dub', 'dual', 'en', 'sub', 'altyazi']
+      : ['en', 'sub', 'altyazi', 'dual', 'tr', 'dub'];
 
-    if (want === 'dub') {
-      sourceList = parsed.tr || parsed.dub || parsed.dual || [];
-      if (!parsed.tr && !parsed.dub && parsed.dual) isDual = true;
-    } else {
-      sourceList = parsed.en || parsed.sub || parsed.altyazi || parsed.dual || [];
-      if (!parsed.en && !parsed.sub && !parsed.altyazi && parsed.dual) isDual = true;
+    for (const k of searchOrder) {
+      if (Array.isArray(parsed[k])) {
+        for (const s of parsed[k]) {
+          if (!allSources.some(x => x.service_slug === s.service_slug && x.link === s.link)) {
+            allSources.push({ ...s, group: k });
+          }
+        }
+      }
     }
 
-    if (sourceList.length === 0) {
+    if (allSources.length === 0) {
       for (const k of Object.keys(parsed)) {
-        if (Array.isArray(parsed[k]) && parsed[k].length > 0) {
-          sourceList = parsed[k];
-          if (k === 'dual') isDual = true;
-          break;
+        if (Array.isArray(parsed[k])) {
+          for (const s of parsed[k]) {
+            allSources.push({ ...s, group: k });
+          }
         }
       }
     }
 
-    if (sourceList.length === 0) {
-      throw new Error(`No video sources available for ${want.toUpperCase()}`);
+    if (allSources.length === 0) {
+      throw new Error(`No video sources found in videoPlayerData for ${targetUrl}`);
     }
 
-    // Select VidMoly (moly) first
-    let molySource = sourceList.find(s => s.service_slug === 'moly') || sourceList[0];
-
-    // Decode embed URL
-    let embedUrl = '';
-    if (molySource.template) {
-      const decodedTmpl = base64Decode(molySource.template);
-      const replaced = decodedTmpl.replace('{url}', molySource.link).replace('{slug}', molySource.slug);
-      const srcMatch = replaced.match(/(?:src|data-src)="([^"]+)"/i);
-      if (srcMatch) embedUrl = srcMatch[1];
-    }
-
-    if (!embedUrl) {
-      embedUrl = `https://vidmoly.net/embed-${molySource.link}.html`;
-    }
-    if (embedUrl.startsWith('//')) embedUrl = 'https:' + embedUrl;
-
-    // Fetch VidMoly embed HTML
-    const vmHtml = await httpGet(embedUrl, {
-      'Referer': BASE_URL + '/'
-    });
-
-    // Extract master M3U8
-    const fileMatch = vmHtml.match(/file:\s*["']([^"']+\.m3u8[^"']*)["']/);
-    if (!fileMatch) {
-      throw new Error('No m3u8 playlist found in VidMoly embed');
-    }
-    const masterM3u8 = fileMatch[1];
-
-    // Extract inlined WebVTT subtitles
+    let vipData = null;
+    let molyData = null;
     const subtitles = [];
-    const tracksMatch = vmHtml.match(/var\s+baseTracks\s*=\s*(\[[\s\S]*?\]);/);
-    if (tracksMatch) {
-      const fileMatches = [...tracksMatch[1].matchAll(/file:\s*["']([^"']+)["'][^}]*?label:\s*["']([^"']+)["']/gi)];
-      for (const fm of fileMatches) {
-        let fUrl = fm[1];
-        if (fUrl.startsWith('//')) fUrl = 'https:' + fUrl;
-        else if (fUrl.startsWith('/')) fUrl = new URL(fUrl, embedUrl).href;
-        subtitles.push({
-          url: fUrl,
-          lang: fm[2],
-          format: fUrl.endsWith('.vtt') ? 'vtt' : 'srt'
-        });
-      }
-    }
+    const seenSubUrls = new Set();
 
-    // Audio stream isolation (prevents iOS AVPlayer defaulting to Turkish dub)
-    let finalStreamUrl = masterM3u8;
-
-    if (isDual) {
-      try {
-        const plText = await httpGet(masterM3u8, {
-          'Referer': embedUrl
-        });
-
-        const hasA2 = plText.includes('index-v1-a2.m3u8') || plText.includes('index-a2.m3u8');
-        const hasA1 = plText.includes('index-v1-a1.m3u8') || plText.includes('index-a1.m3u8');
-
-        if (want === 'sub' && hasA2) {
-          const a2Match = plText.match(/https?:\/\/[^\s]+\/index-v1-a2\.m3u8[^\s]*/);
-          if (a2Match) {
-            finalStreamUrl = a2Match[0];
-          }
-        } else if (want === 'dub' && hasA1) {
-          const a1Match = plText.match(/https?:\/\/[^\s]+\/index-v1-a1\.m3u8[^\s]*/);
-          if (a1Match) {
-            finalStreamUrl = a1Match[0];
-          } else if (hasA2) {
-            const a2Url = plText.match(/https?:\/\/[^\s]+\/index-v1-a2\.m3u8[^\s]*/)[0];
-            finalStreamUrl = a2Url.replace('index-v1-a2.m3u8', 'index-v1-a1.m3u8');
-          }
-        } else {
-          const stdMatch = plText.match(/https?:\/\/[^\s]+\/index-v1-a1\.m3u8[^\s]*/);
-          if (stdMatch) finalStreamUrl = stdMatch[0];
-        }
-      } catch (_) {
-        finalStreamUrl = masterM3u8;
-      }
-    }
-
-    const label = `${want === 'dub' ? 'Türkçe Dublaj' : 'Türkçe Altyazılı'} · Moly 1080p`;
-
-    const servers = [
-      {
-        name: `HDFilmCehennemi Moly (${want.toUpperCase()})`,
+    function addSub(url, label, language, isDef, vttText, ref) {
+      if (!url || seenSubUrls.has(url)) return;
+      seenSubUrls.add(url);
+      subtitles.push({
+        id: url,
+        url: url,
+        file: url,
         label: label,
-        url: finalStreamUrl,
+        language: language,
+        lang: language,
+        kind: 'captions',
+        default: isDef,
+        isDefault: isDef,
+        content: vttText || undefined,
+        format: 'vtt',
+        headers: {
+          'Referer': ref || 'https://vidload.top/'
+        }
+      });
+    }
+
+    // 1. Process VIP (VidLoad) if present in sources
+    const vipSource = allSources.find(s => s.service_slug === 'vip');
+    if (vipSource) {
+      try {
+        const vipEmbedUrl = `https://vidload.top/player/${vipSource.link}`;
+        const vpHtml = await httpGet(vipEmbedUrl, { 'Referer': BASE_URL + '/' });
+        const setupMatch = vpHtml.match(/jwplayer\('player'\)\.setup\s*\(\s*JSON\.parse\s*\(\s*'([^']+)'\s*\)\s*\)/);
+        if (setupMatch) {
+          const raw = setupMatch[1];
+          let conf = null;
+          try {
+            const jsonStr = Function('return \'' + raw.replace(/'/g, "\\'") + '\'')();
+            conf = JSON.parse(jsonStr);
+          } catch (_) {
+            const cleaned = raw.replace(/\\u([0-9a-fA-F]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16))).replace(/\\'/g, "'").replace(/\\\//g, '/');
+            conf = JSON.parse(cleaned);
+          }
+
+          if (conf && conf.file) {
+            vipData = {
+              masterUrl: conf.file.replace(/\\/g, ''),
+              tracks: conf.tracks || []
+            };
+
+            // Download and inline WebVTT subtitles from VIP
+            for (const tr of conf.tracks || []) {
+              if (tr.file && (tr.file.includes('.vtt') || tr.kind === 'captions')) {
+                const cleanFile = tr.file.replace(/\\/g, '');
+                let vttBody = '';
+                try {
+                  vttBody = await httpGet(cleanFile, { 'Referer': 'https://vidload.top/' });
+                } catch (_) {}
+                const isTr = /tur|türk/i.test(tr.label || '');
+                addSub(cleanFile, tr.label || 'Türkçe', isTr ? 'tr' : 'en', isTr, vttBody, 'https://vidload.top/');
+              }
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 2. Process Moly (VidMoly) if present in sources
+    const molySource = allSources.find(s => s.service_slug === 'moly');
+    if (molySource) {
+      try {
+        let molyEmbed = `https://vidmoly.biz/embed-${molySource.link}.html`;
+        if (molySource.template) {
+          const dec = base64Decode(molySource.template).replace('{url}', molySource.link).replace('{slug}', molySource.slug);
+          const srcM = dec.match(/(?:src|data-src)="([^"]+)"/i);
+          if (srcM) molyEmbed = srcM[1];
+        }
+        if (molyEmbed.startsWith('//')) molyEmbed = 'https:' + molyEmbed;
+        if (molyEmbed.includes('vidmoly.net')) molyEmbed = molyEmbed.replace('vidmoly.net', 'vidmoly.biz');
+
+        const vmHtml = await httpGet(molyEmbed, { 'Referer': BASE_URL + '/' });
+        const mMatch = vmHtml.match(/file:\s*["']([^"']+\.m3u8[^"']*)["']/);
+        if (mMatch) {
+          const masterUrl = mMatch[1];
+          let hasA1 = false;
+          let hasA2 = false;
+          let a1Url = masterUrl;
+          let a2Url = masterUrl;
+
+          try {
+            const plText = await httpGet(masterUrl, { 'Referer': 'https://vidmoly.biz/' });
+            hasA1 = plText.includes('index-v1-a1.m3u8') || plText.includes('index-a1.m3u8');
+            hasA2 = plText.includes('index-v1-a2.m3u8') || plText.includes('index-a2.m3u8');
+            const m1 = plText.match(/https?:\/\/[^\s]+\/index-v1-a1\.m3u8[^\s]*/);
+            const m2 = plText.match(/https?:\/\/[^\s]+\/index-v1-a2\.m3u8[^\s]*/);
+            if (m1) a1Url = m1[0];
+            if (m2) a2Url = m2[0];
+            if (!m1 && m2) a1Url = m2[0].replace('index-v1-a2', 'index-v1-a1');
+            if (m1 && !m2 && hasA2) a2Url = m1[0].replace('index-v1-a1', 'index-v1-a2');
+          } catch (_) {}
+
+          molyData = { masterUrl, hasA1, hasA2, a1Url, a2Url };
+
+          // Download and inline WebVTT subtitles from Moly baseTracks if present
+          const trMatch = vmHtml.match(/var\s+baseTracks\s*=\s*(\[[\s\S]*?\]);/);
+          if (trMatch) {
+            const fileMatches = [...trMatch[1].matchAll(/file:\s*["']([^"']+)["'][^}]*?label:\s*["']([^"']+)["']/gi)];
+            for (const fm of fileMatches) {
+              let fUrl = fm[1];
+              if (fUrl.startsWith('//')) fUrl = 'https:' + fUrl;
+              else if (fUrl.startsWith('/')) fUrl = new URL(fUrl, molyEmbed).href;
+              if (fUrl.includes('.vtt')) {
+                let vttBody = '';
+                try {
+                  vttBody = await httpGet(fUrl, { 'Referer': 'https://vidmoly.biz/' });
+                } catch (_) {}
+                const isTr = /tur|türk/i.test(fm[2] || '');
+                addSub(fUrl, fm[2], isTr ? 'tr' : 'en', isTr, vttBody, 'https://vidmoly.biz/');
+              }
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (!vipData && !molyData) {
+      throw new Error(`Failed to extract playable HLS streams for ${targetUrl}`);
+    }
+
+    const servers = [];
+    let primaryStreamUrl = '';
+    let primaryHeaders = {};
+
+    // Build VIP server entry if available
+    if (vipData) {
+      servers.push({
+        name: `HDFilmCehennemi VIP (${want.toUpperCase()})`,
+        label: `VIP 1080p · ${want === 'dub' ? 'Türkçe Dublaj' : 'Orijinal Ses + Türkçe Altyazı'}`,
+        url: vipData.masterUrl,
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Referer': 'https://vidmoly.net/'
+          'Referer': 'https://vidload.top/'
         },
         streamType: 'hls',
         lang: want,
         audioLanguage: want === 'dub' ? 'tr' : 'en',
-        audioLanguages: [want === 'dub' ? 'tr' : 'en'],
+        audioLanguages: ['tr', 'en'],
         quality: '1080p',
         subtitles: subtitles
+      });
+    }
+
+    // Build Moly server entry if available
+    if (molyData) {
+      const streamForMoly = want === 'sub' ? (molyData.hasA2 ? molyData.a2Url : molyData.masterUrl) : molyData.a1Url;
+      servers.push({
+        name: `HDFilmCehennemi Moly (${want.toUpperCase()})`,
+        label: `Moly 1080p · ${want === 'dub' ? 'Türkçe Dublaj' : (molyData.hasA2 ? 'Orijinal Ses' : 'Türkçe Altyazılı')}`,
+        url: streamForMoly,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Referer': 'https://vidmoly.biz/'
+        },
+        streamType: 'hls',
+        lang: want,
+        audioLanguage: (want === 'sub' && molyData.hasA2) ? 'en' : 'tr',
+        audioLanguages: molyData.hasA2 ? ['tr', 'en'] : ['tr'],
+        quality: '1080p',
+        subtitles: subtitles
+      });
+    }
+
+    // Determine primary stream:
+    // For 'sub':
+    // If Moly has dedicated original audio (hasA2), use Moly a2 (isolated Japanese/English audio)
+    // Otherwise, use VIP (which has full subtitles + dual audio master)
+    if (want === 'sub') {
+      if (molyData && molyData.hasA2) {
+        primaryStreamUrl = molyData.a2Url;
+        primaryHeaders = {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Referer': 'https://vidmoly.biz/'
+        };
+      } else if (vipData) {
+        primaryStreamUrl = vipData.masterUrl;
+        primaryHeaders = {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Referer': 'https://vidload.top/'
+        };
+      } else if (molyData) {
+        primaryStreamUrl = molyData.masterUrl;
+        primaryHeaders = {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Referer': 'https://vidmoly.biz/'
+        };
       }
-    ];
+    } else {
+      // For 'dub':
+      // If Moly has Turkish dub (a1Url), use Moly a1
+      // Otherwise use VIP
+      if (molyData && molyData.a1Url) {
+        primaryStreamUrl = molyData.a1Url;
+        primaryHeaders = {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Referer': 'https://vidmoly.biz/'
+        };
+      } else if (vipData) {
+        primaryStreamUrl = vipData.masterUrl;
+        primaryHeaders = {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Referer': 'https://vidload.top/'
+        };
+      }
+    }
 
     const flatStreams = [
-      (want === 'dub' ? 'dub ' : 'sub ') + '1080p', finalStreamUrl,
-      'Auto 1080p', finalStreamUrl
+      (want === 'dub' ? 'dub ' : 'sub ') + '1080p', primaryStreamUrl,
+      'Auto 1080p', primaryStreamUrl
     ];
 
     return {
-      url: finalStreamUrl,
-      streamUrl: finalStreamUrl,
+      url: primaryStreamUrl,
+      streamUrl: primaryStreamUrl,
       streamType: 'hls',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Referer': 'https://vidmoly.net/'
-      },
+      headers: primaryHeaders,
       streams: flatStreams,
       servers: servers,
       subtitles: subtitles
@@ -670,8 +787,13 @@ async function extractStreamUrl(pageUrl, lang) {
 /**
  * Dedicated Subtitles extractor
  */
-async function extractSubtitles() {
-  return [];
+async function extractSubtitles(pageUrl) {
+  try {
+    const res = await extractStreamUrl(pageUrl, 'sub');
+    return (res && Array.isArray(res.subtitles)) ? res.subtitles : [];
+  } catch (_) {
+    return [];
+  }
 }
 
 /**

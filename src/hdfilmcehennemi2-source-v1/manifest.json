@@ -4,15 +4,15 @@
   "contentType": "video",
   "language": "tr",
   "contractVersion": 3,
-  "moduleVersion": "1.0.3",
-  "version": "1.0.3",
+  "moduleVersion": "1.0.4",
+  "version": "1.0.4",
   "moduleFamilyId": "hdfilmcehennemi2_source_v1",
   "moduleIdentity": "SP-VID-999-HDC2",
   "moduleIdentityNumber": 999,
   "releaseTrack": "stable",
   "presentation": {
     "category": "Movies & TV",
-    "purpose": "Movies & Series with Dedicated Original Audio (Altyazılı) and Turkish Dub Streams via VidMoly",
+    "purpose": "Movies & Series with Dedicated Original Audio (Altyazılı) and Turkish Dub Streams via VIP & VidMoly",
     "recommended": true,
     "language": "Turkish Sub/Dub",
     "languages": [
@@ -27,7 +27,7 @@
     "baseUrl": "https://www.hdfilmcehennemi2.biz",
     "presentation": {
       "category": "Movies & TV",
-      "purpose": "Movies & Series with Dedicated Original Audio (Altyazılı) and Turkish Dub Streams via VidMoly",
+      "purpose": "Movies & Series with Dedicated Original Audio (Altyazılı) and Turkish Dub Streams via VIP & VidMoly",
       "recommended": true,
       "language": "Turkish Sub/Dub",
       "languages": [
