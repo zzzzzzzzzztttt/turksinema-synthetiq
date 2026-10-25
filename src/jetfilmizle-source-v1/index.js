@@ -39,10 +39,37 @@ function makeAbsolute(path, base = BASE_URL) {
 
 function resolvePageUrl(input) {
   if (!input) return '';
-  if (typeof input === 'string') return makeAbsolute(input);
-  if (typeof input === 'object') {
-    const raw = input.url || input.id || input.href || input.pageUrl || '';
-    if (raw) return makeAbsolute(raw);
+  if (typeof input === 'object' && input !== null) {
+    input = input.url || input.id || input.href || input.targetUrl || input.pageUrl || input.link || '';
+  }
+  const str = String(input).trim();
+  if (!str) return '';
+  return makeAbsolute(str);
+}
+
+/**
+ * Universal response body unpacker for iOS fetchv2 and standard fetch
+ */
+async function readResponseBody(res) {
+  if (!res) return '';
+  if (typeof res === 'string') return res;
+  if (typeof res.body === 'string' && res.body) return res.body;
+  if (typeof res.response === 'string' && res.response) return res.response;
+  if (typeof res.data === 'string' && res.data) return res.data;
+  if (res.data != null && typeof res.data === 'object') {
+    try { return JSON.stringify(res.data); } catch (_) {}
+  }
+  if (typeof res.text === 'function') {
+    try {
+      const t = await res.text();
+      if (typeof t === 'string' && t) return t;
+    } catch (_) {}
+  }
+  if (res.json != null) {
+    try {
+      const v = typeof res.json === 'function' ? await res.json() : res.json;
+      if (v != null) return typeof v === 'string' ? v : JSON.stringify(v);
+    } catch (_) {}
   }
   return '';
 }
@@ -66,24 +93,7 @@ async function httpGet(url, customHeaders = {}) {
     res = await fetch(url, { method: 'GET', headers });
   }
 
-  if (!res) return '';
-  if (typeof res.body === 'string' && res.body) return res.body;
-
-  if (typeof res.text === 'function') {
-    try {
-      const t = await res.text();
-      if (typeof t === 'string' && t) return t;
-    } catch (_) {}
-  }
-
-  if (res.json != null) {
-    try {
-      const v = typeof res.json === 'function' ? await res.json() : res.json;
-      if (v != null) return typeof v === 'string' ? v : JSON.stringify(v);
-    } catch (_) {}
-  }
-
-  return '';
+  return await readResponseBody(res);
 }
 
 /**
@@ -105,24 +115,7 @@ async function httpPost(url, body, customHeaders = {}) {
     res = await fetch(url, { method: 'POST', headers, body });
   }
 
-  if (!res) return '';
-  if (typeof res.body === 'string' && res.body) return res.body;
-
-  if (typeof res.text === 'function') {
-    try {
-      const t = await res.text();
-      if (typeof t === 'string' && t) return t;
-    } catch (_) {}
-  }
-
-  if (res.json != null) {
-    try {
-      const v = typeof res.json === 'function' ? await res.json() : res.json;
-      if (v != null) return typeof v === 'string' ? v : JSON.stringify(v);
-    } catch (_) {}
-  }
-
-  return '';
+  return await readResponseBody(res);
 }
 
 const TITLE_ALIASES = {
@@ -274,9 +267,13 @@ async function extractEpisodes(id) {
     if (!isSeries) {
       return [{
         id: pageUrl,
+        url: pageUrl,
+        href: pageUrl,
         title: 'Film',
         season: 1,
-        episode: 1
+        episode: 1,
+        seasonNumber: 1,
+        episodeNumber: 1
       }];
     }
 
@@ -298,11 +295,16 @@ async function extractEpisodes(id) {
               const epKey = `s${sNum}e${eNum}`;
               if (!seen.has(epKey)) {
                 seen.add(epKey);
+                const epUrl = `${pageUrl}?season=${sNum}&episode=${eNum}`;
                 episodes.push({
-                  id: `${pageUrl}?season=${sNum}&episode=${eNum}`,
+                  id: epUrl,
+                  url: epUrl,
+                  href: epUrl,
                   title: ep.name ? cleanText(ep.name) : `Sezon ${sNum} Bölüm ${eNum}`,
                   season: sNum,
-                  episode: eNum
+                  episode: eNum,
+                  seasonNumber: sNum,
+                  episodeNumber: eNum
                 });
               }
             }
@@ -321,11 +323,16 @@ async function extractEpisodes(id) {
       const epKey = `s${sNum}e${eNum}`;
       if (!seen.has(epKey)) {
         seen.add(epKey);
+        const epUrl = `${pageUrl}?season=${sNum}&episode=${eNum}`;
         episodes.push({
-          id: `${pageUrl}?season=${sNum}&episode=${eNum}`,
+          id: epUrl,
+          url: epUrl,
+          href: epUrl,
           title: `Sezon ${sNum} Bölüm ${eNum}`,
           season: sNum,
-          episode: eNum
+          episode: eNum,
+          seasonNumber: sNum,
+          episodeNumber: eNum
         });
       }
     }
@@ -333,9 +340,13 @@ async function extractEpisodes(id) {
     if (episodes.length === 0) {
       episodes.push({
         id: pageUrl,
+        url: pageUrl,
+        href: pageUrl,
         title: 'Bölüm 1',
         season: 1,
-        episode: 1
+        episode: 1,
+        seasonNumber: 1,
+        episodeNumber: 1
       });
     }
 
@@ -346,31 +357,94 @@ async function extractEpisodes(id) {
 }
 
 /**
- * Extract stream URL for video playback
+ * Extract stream URL for video playback (Contract Version 3)
  */
 async function extractStreamUrl(episode, server) {
   try {
     const rawEp = resolvePageUrl(episode);
-    if (!rawEp) return null;
+    if (!rawEp) {
+      return {
+        url: '',
+        streamUrl: '',
+        streamType: 'hls',
+        format: 'hls',
+        quality: 'Auto',
+        headers: {},
+        streams: [],
+        servers: [],
+        subtitles: [],
+        error: { message: 'Geçersiz bölüm bağlantısı' }
+      };
+    }
 
     const epObj = typeof episode === 'object' && episode !== null ? episode : {};
     const serverObj = typeof server === 'object' && server !== null ? server : {};
     const serverPref = String(serverObj.name || serverObj.id || server || '').toLowerCase();
 
-    // Parse URL components
+    // Parse URL components safely without URLSearchParams (JSC compatibility)
     const [baseUrl, queryPart] = rawEp.split('?');
-    const queryParams = new URLSearchParams(queryPart || '');
+    let seasonNum = 1;
+    let episodeNum = 1;
+    if (epObj.season != null && !isNaN(parseInt(epObj.season, 10))) {
+      seasonNum = parseInt(epObj.season, 10);
+    } else if (epObj.seasonNumber != null && !isNaN(parseInt(epObj.seasonNumber, 10))) {
+      seasonNum = parseInt(epObj.seasonNumber, 10);
+    }
+    if (epObj.episode != null && !isNaN(parseInt(epObj.episode, 10))) {
+      episodeNum = parseInt(epObj.episode, 10);
+    } else if (epObj.episodeNumber != null && !isNaN(parseInt(epObj.episodeNumber, 10))) {
+      episodeNum = parseInt(epObj.episodeNumber, 10);
+    }
 
-    const seasonNum = epObj.season || queryParams.get('season') || 1;
-    const episodeNum = epObj.episode || queryParams.get('episode') || 1;
+    if (queryPart) {
+      const sM = queryPart.match(/(?:^|&)season=(\d+)/i);
+      if (sM) seasonNum = parseInt(sM[1], 10);
+      const eM = queryPart.match(/(?:^|&)episode=(\d+)/i);
+      if (eM) episodeNum = parseInt(eM[1], 10);
+    }
 
     // Fetch the main content page to get film_id and available player types
     const html = await httpGet(baseUrl);
-    if (!html) return null;
+    if (!html) {
+      return {
+        url: '',
+        streamUrl: '',
+        streamType: 'hls',
+        format: 'hls',
+        quality: 'Auto',
+        headers: {},
+        streams: [],
+        servers: [],
+        subtitles: [],
+        error: { message: 'Sayfa içeriği yüklenemedi' }
+      };
+    }
 
-    const filmIdMatch = html.match(/name="film_id"\s+value="(\d+)"/);
-    if (!filmIdMatch) return null;
-    const filmId = filmIdMatch[1];
+    // Match film_id with multiple strategies
+    let filmId = '';
+    const fIdMatch = html.match(/name=["']film_id["'][^>]*value=["'](\d+)["']/i) ||
+                     html.match(/value=["'](\d+)["'][^>]*name=["']film_id["']/i) ||
+                     html.match(/data-film-id=["'](\d+)["']/i) ||
+                     html.match(/data-id=["'](\d+)["']/i) ||
+                     html.match(/film_id\s*[:=]\s*["']?(\d+)["']?/i);
+    if (fIdMatch) {
+      filmId = fIdMatch[1];
+    }
+
+    if (!filmId) {
+      return {
+        url: '',
+        streamUrl: '',
+        streamType: 'hls',
+        format: 'hls',
+        quality: 'Auto',
+        headers: {},
+        streams: [],
+        servers: [],
+        subtitles: [],
+        error: { message: 'Video kimliği (film_id) bulunamadı' }
+      };
+    }
 
     // Determine player types to test:
     // If user prefers Sub or Altyazı, try altyazili first, else dublaj first
@@ -420,15 +494,19 @@ async function extractStreamUrl(episode, server) {
 
               return {
                 url: mp4Url,
-                quality: `${q}p`,
+                streamUrl: mp4Url,
+                streamType: 'mp4',
                 format: 'mp4',
+                quality: `${q}p`,
                 headers: {
                   'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15'
                 },
+                streams: [`${q}p Direct`, mp4Url],
                 servers: [
                   { name: `Gold ${q}p (${playerType.toUpperCase()})`, url: mp4Url },
                   { name: `VIP (${playerType.toUpperCase()})`, url: baseUrl }
-                ]
+                ],
+                subtitles: []
               };
             }
           } catch (_) {}
@@ -448,16 +526,21 @@ async function extractStreamUrl(episode, server) {
               });
               const sData = typeof streamRaw === 'string' ? JSON.parse(streamRaw) : streamRaw;
               if (sData && sData.hlsSource && sData.hlsSource.file) {
+                const hlsUrl = sData.hlsSource.file;
                 return {
-                  url: sData.hlsSource.file,
-                  quality: 'Auto',
+                  url: hlsUrl,
+                  streamUrl: hlsUrl,
+                  streamType: 'hls',
                   format: 'hls',
+                  quality: 'Auto',
                   headers: {
                     'Referer': 'https://videopark.top/'
                   },
+                  streams: ['Auto 1080p', hlsUrl],
                   servers: [
-                    { name: `VIP HLS (${playerType.toUpperCase()})`, url: sData.hlsSource.file }
-                  ]
+                    { name: `VIP HLS (${playerType.toUpperCase()})`, url: hlsUrl }
+                  ],
+                  subtitles: []
                 };
               }
             }
@@ -478,14 +561,18 @@ async function extractStreamUrl(episode, server) {
                 const fullHls = `https://videopark.top/apollo/${aData.hlsUrl.replace(/^\/+/, '')}`;
                 return {
                   url: fullHls,
-                  quality: 'Auto',
+                  streamUrl: fullHls,
+                  streamType: 'hls',
                   format: 'hls',
+                  quality: 'Auto',
                   headers: {
                     'Referer': embedUrl
                   },
+                  streams: ['Auto 1080p', fullHls],
                   servers: [
                     { name: `Apollo HLS (${playerType.toUpperCase()})`, url: fullHls }
-                  ]
+                  ],
+                  subtitles: []
                 };
               }
             }
@@ -500,16 +587,38 @@ async function extractStreamUrl(episode, server) {
             if (sdMatch) {
               const sdData = JSON.parse(sdMatch[1]);
               if (sdData.stream_url) {
+                const subs = [];
+                const subtitleList = sdData.subtitles || [];
+                for (const sub of subtitleList) {
+                  if (sub.file) {
+                    try {
+                      const subContent = await httpGet(sub.file, { 'Referer': 'https://videopark.top/' });
+                      if (subContent && subContent.includes('WEBVTT')) {
+                        subs.push({
+                          url: sub.file,
+                          language: sub.label || 'Türkçe',
+                          label: sub.label || 'Türkçe Altyazı',
+                          content: subContent
+                        });
+                      }
+                    } catch (_) {}
+                  }
+                }
+
                 return {
                   url: sdData.stream_url,
-                  quality: 'Auto',
+                  streamUrl: sdData.stream_url,
+                  streamType: 'hls',
                   format: 'hls',
+                  quality: 'Auto',
                   headers: {
                     'Referer': 'https://videopark.top/'
                   },
+                  streams: ['Auto 1080p', sdData.stream_url],
                   servers: [
                     { name: `Titan HLS (${playerType.toUpperCase()})`, url: sdData.stream_url }
-                  ]
+                  ],
+                  subtitles: subs
                 };
               }
             }
@@ -518,9 +627,31 @@ async function extractStreamUrl(episode, server) {
       }
     }
 
-    return null;
+    return {
+      url: '',
+      streamUrl: '',
+      streamType: 'hls',
+      format: 'hls',
+      quality: 'Auto',
+      headers: {},
+      streams: [],
+      servers: [],
+      subtitles: [],
+      error: { message: 'JetFilmizle: Video kaynağı bulunamadı veya oynatılamıyor.' }
+    };
   } catch (err) {
-    return null;
+    return {
+      url: '',
+      streamUrl: '',
+      streamType: 'hls',
+      format: 'hls',
+      quality: 'Auto',
+      headers: {},
+      streams: [],
+      servers: [],
+      subtitles: [],
+      error: { message: err ? err.message : 'JetFilmizle stream extraction failed' }
+    };
   }
 }
 
@@ -535,9 +666,13 @@ async function extractSubtitles(pageUrl) {
     const html = await httpGet(rawUrl);
     if (!html) return [];
 
-    const filmIdMatch = html.match(/name="film_id"\s+value="(\d+)"/);
-    if (!filmIdMatch) return [];
-    const filmId = filmIdMatch[1];
+    const fIdMatch = html.match(/name=["']film_id["'][^>]*value=["'](\d+)["']/i) ||
+                     html.match(/value=["'](\d+)["'][^>]*name=["']film_id["']/i) ||
+                     html.match(/data-film-id=["'](\d+)["']/i) ||
+                     html.match(/data-id=["'](\d+)["']/i) ||
+                     html.match(/film_id\s*[:=]\s*["']?(\d+)["']?/i);
+    if (!fIdMatch) return [];
+    const filmId = fIdMatch[1];
 
     const subs = [];
 
