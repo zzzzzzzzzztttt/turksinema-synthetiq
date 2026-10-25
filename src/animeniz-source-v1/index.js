@@ -4,7 +4,7 @@
  * Contract Version 3 | contentType: video
  * Features:
  *   - Direct 1080p MP4 CDN streams (No P2P / WebTorrent, No Cloudflare Turnstile blocks)
- *   - Accurate search via Next.js API (/api/search?q=...&limit=20)
+ *   - Accurate search via Next.js API (/api/search?q=...&limit=20) with punctuation tolerance
  *   - Complete multi-episode extraction from Next.js flight data (74/74 episodes for Monster)
  */
 
@@ -32,10 +32,13 @@ function makeAbsolute(path, base = BASE_URL) {
   return trimmed.startsWith('/') ? cleanBase + trimmed : cleanBase + '/' + trimmed;
 }
 
+/**
+ * Universal HTTP GET supporting iOS Synthetiq fetchv2 and standard fetch
+ */
 async function httpGet(url, customHeaders = {}) {
   const headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8',
     'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
     'Referer': BASE_URL + '/',
     ...customHeaders
@@ -48,35 +51,62 @@ async function httpGet(url, customHeaders = {}) {
     res = await fetch(url, { method: 'GET', headers });
   }
 
-  let text = '';
-  if (res && typeof res.text === 'function') {
-    try { text = await res.text(); } catch (_) {}
-  } else if (res && typeof res.body === 'string') {
-    text = res.body;
-  } else if (res && res.body != null) {
-    text = String(res.body);
+  if (!res) return '';
+
+  // 1. Check res.body (string from fetchv2 or custom shim)
+  if (typeof res.body === 'string' && res.body) return res.body;
+
+  // 2. Check res.text() (standard fetch Response in Node / Web)
+  if (typeof res.text === 'function') {
+    try {
+      const t = await res.text();
+      if (typeof t === 'string' && t) return t;
+    } catch (_) {}
   }
 
-  return text || '';
+  // 3. Check res.json (Synthetiq native fetchv2 JSON property)
+  if (res.json != null) {
+    try {
+      const v = typeof res.json === 'function' ? await res.json() : res.json;
+      if (v != null) return typeof v === 'string' ? v : JSON.stringify(v);
+    } catch (_) {}
+  }
+
+  return '';
 }
 
 /**
- * Search results handler - Uses official Next.js search API
+ * Search results handler - Uses official Next.js search API with punctuation tolerance
  */
 async function searchResults(query) {
   try {
     const q = String(query || '').trim();
     if (!q) return [];
-    const url = `${BASE_URL}/api/search?q=${encodeURIComponent(q)}&limit=20`;
-    const text = await httpGet(url, { 'Accept': 'application/json' });
-    let json;
-    try {
-      json = JSON.parse(text);
-    } catch (_) {
-      return [];
+
+    const candidatesToTry = [q];
+    // If query has 're zero' or 'rezero', add 're:zero'
+    if (/re\s*zero/i.test(q) && !q.includes(':')) {
+      candidatesToTry.push(q.replace(/re\s*zero/gi, 're:zero'));
+    } else if (q.includes(':')) {
+      candidatesToTry.push(q.replace(/:/g, ' '));
     }
 
-    const list = Array.isArray(json.data) ? json.data : [];
+    let list = [];
+    for (const c of candidatesToTry) {
+      const url = `${BASE_URL}/api/search?q=${encodeURIComponent(c)}&limit=20`;
+      const text = await httpGet(url, { 'Accept': 'application/json' });
+      if (!text) continue;
+      try {
+        const json = JSON.parse(text);
+        if (Array.isArray(json.data) && json.data.length > 0) {
+          list = json.data;
+          break;
+        }
+      } catch (_) {}
+    }
+
+    if (!Array.isArray(list) || list.length === 0) return [];
+
     return list.map(item => {
       const isMovie = item.type === 'movie';
       const itemUrl = isMovie
@@ -238,7 +268,7 @@ async function extractStreamUrl(episodeUrl) {
   try {
     const html = await httpGet(episodeUrl);
     const playerMatch = html.match(/player\.animeniz\.com\/player\/([a-zA-Z0-9\-]+)/);
-    if (!playerMatch) throw new Error('Animeniz player UUID not found');
+    if (!playerMatch) throw new Error('Animeniz player UUID not found on episode page');
     const uuid = playerMatch[1];
 
     const streamUrl = `https://player.animeniz.com/video/${uuid}/stream`;
@@ -267,15 +297,9 @@ async function extractStreamUrl(episodeUrl) {
     };
   } catch (err) {
     return {
-      url: episodeUrl,
-      streams: ['Source', episodeUrl],
-      headers: {},
-      streamType: 'mp4',
-      lang: 'sub',
-      quality: '1080p',
-      defaultQuality: '1080p',
+      streams: [],
       subtitles: [],
-      servers: []
+      error: { message: err ? err.message : 'Animeniz stream extraction failed' }
     };
   }
 }
@@ -286,6 +310,7 @@ async function extractStreamUrl(episodeUrl) {
 async function discoveryHome() {
   try {
     const text = await httpGet(`${BASE_URL}/api/search?q=popular&limit=20`, { 'Accept': 'application/json' });
+    if (!text) return [];
     let json;
     try {
       json = JSON.parse(text);

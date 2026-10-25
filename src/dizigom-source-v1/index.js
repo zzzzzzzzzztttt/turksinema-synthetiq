@@ -3,10 +3,10 @@
  * Target: Dizigom (https://dizigom3.top)
  * Contract Version 3 | contentType: video
  * Features:
- *   - Movies, TV Series, and Asian Dramas with Dual Audio (TR Dub / EN Sub)
- *   - Fast autocomplete suggestions search with TMDB w780 posters
- *   - Multi-season episode parser
- *   - Pre-fetched inlined WebVTT subtitles to prevent iOS AVPlayer 403 errors
+ *   - Comprehensive catalog search (/ara?q= + /ara/oneri) for Movies, TV Series & Asian Dramas
+ *   - Accurate relevance ranking (e.g. "The Mentalist", "Pulp Fiction", "Mr. Queen")
+ *   - Multi-season series episode parser
+ *   - Native HLS stream extraction with inlined WebVTT subtitles
  */
 
 const BASE_URL = 'https://dizigom3.top';
@@ -33,10 +33,13 @@ function makeAbsolute(path, base = BASE_URL) {
   return trimmed.startsWith('/') ? cleanBase + trimmed : cleanBase + '/' + trimmed;
 }
 
+/**
+ * Universal HTTP GET supporting iOS Synthetiq fetchv2 and standard fetch
+ */
 async function httpGet(url, customHeaders = {}) {
   const headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8',
     'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
     'Referer': BASE_URL + '/',
     ...customHeaders
@@ -49,67 +52,152 @@ async function httpGet(url, customHeaders = {}) {
     res = await fetch(url, { method: 'GET', headers });
   }
 
-  let text = '';
-  if (res && typeof res.text === 'function') {
-    try { text = await res.text(); } catch (_) {}
-  } else if (res && typeof res.body === 'string') {
-    text = res.body;
-  } else if (res && res.body != null) {
-    text = String(res.body);
+  if (!res) return '';
+
+  // 1. Check res.body (string from fetchv2 or custom shim)
+  if (typeof res.body === 'string' && res.body) return res.body;
+
+  // 2. Check res.text() (standard fetch Response in Node / Web)
+  if (typeof res.text === 'function') {
+    try {
+      const t = await res.text();
+      if (typeof t === 'string' && t) return t;
+    } catch (_) {}
   }
 
-  return text || '';
+  // 3. Check res.json (Synthetiq native fetchv2 JSON property)
+  if (res.json != null) {
+    try {
+      const v = typeof res.json === 'function' ? await res.json() : res.json;
+      if (v != null) return typeof v === 'string' ? v : JSON.stringify(v);
+    } catch (_) {}
+  }
+
+  return '';
+}
+
+function parseDizigomCards(html) {
+  const items = [];
+  const seen = new Set();
+  const cardRegex = /<a[^>]+href="([^"]*(?:\/film\/|\/dizi\/)[^"]*)"[^>]*>([\s\S]*?)<\/a>/gi;
+  let m;
+
+  while ((m = cardRegex.exec(html)) !== null) {
+    const rawUrl = m[1];
+    if (rawUrl.includes('/sezon-') || rawUrl.includes('/bolum-') || rawUrl.includes('/kategori/') || rawUrl.includes('/oyuncu/')) continue;
+    const itemUrl = makeAbsolute(rawUrl);
+    if (seen.has(itemUrl)) continue;
+    seen.add(itemUrl);
+
+    const block = m[2];
+    const imgMatch = block.match(/src="([^"]+)"/i);
+    const titleMatch = block.match(/<(?:h2|h3|h4|span|div|p)[^>]*class="[^"]*(?:title|name|font-semibold)[^"]*"[^>]*>([\s\S]*?)<\//i) ||
+                       block.match(/alt="([^"]+)"/i);
+    let title = titleMatch ? cleanText(titleMatch[1]) : '';
+    if (!title) {
+      const slug = itemUrl.split('/').filter(Boolean).pop();
+      title = slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+    const cover = imgMatch ? makeAbsolute(imgMatch[1]) : '';
+    const isSeries = itemUrl.includes('/dizi/');
+
+    items.push({
+      id: itemUrl,
+      title: title,
+      url: itemUrl,
+      href: itemUrl,
+      image: cover,
+      poster: cover,
+      coverUrl: cover,
+      isSeries: isSeries,
+      type: isSeries ? 'series' : 'movie'
+    });
+  }
+  return items;
 }
 
 /**
  * Search results handler
- * Uses Dizigom autocomplete API for accurate, instant results
+ * Combines full catalog search page and instant autocomplete API for maximum coverage
  */
 async function searchResults(query) {
   try {
     const q = String(query || '').trim();
     if (!q) return [];
 
-    const url = `${BASE_URL}/ara/oneri?q=${encodeURIComponent(q)}`;
-    const text = await httpGet(url, {
-      'Accept': 'application/json, text/plain, */*',
-      'X-Requested-With': 'XMLHttpRequest'
+    // 1. Query full search results page
+    const searchUrl = `${BASE_URL}/ara?q=${encodeURIComponent(q)}`;
+    const html = await httpGet(searchUrl);
+    const htmlItems = parseDizigomCards(html);
+
+    // 2. Also query autocomplete suggestions API
+    let oneriItems = [];
+    try {
+      const oneriUrl = `${BASE_URL}/ara/oneri?q=${encodeURIComponent(q)}`;
+      const oneriText = await httpGet(oneriUrl, {
+        'Accept': 'application/json, text/plain, */*',
+        'X-Requested-With': 'XMLHttpRequest'
+      });
+      if (oneriText) {
+        const json = JSON.parse(oneriText);
+        const list = [
+          ...(Array.isArray(json.series) ? json.series : []),
+          ...(Array.isArray(json.movies) ? json.movies : [])
+        ];
+        for (const item of list) {
+          if (!item.url || !item.title) continue;
+          const isSeries = item.type === 'series' || item.url.includes('/dizi/');
+          const itemUrl = makeAbsolute(item.url);
+          const poster = item.poster ? makeAbsolute(item.poster) : '';
+          oneriItems.push({
+            id: itemUrl,
+            title: cleanText(item.title),
+            url: itemUrl,
+            href: itemUrl,
+            image: poster,
+            poster: poster,
+            coverUrl: poster,
+            isSeries: isSeries,
+            type: isSeries ? 'series' : 'movie'
+          });
+        }
+      }
+    } catch (_) {}
+
+    // Combine and deduplicate
+    const seen = new Set();
+    const combined = [];
+    for (const item of [...htmlItems, ...oneriItems]) {
+      if (seen.has(item.url)) continue;
+      seen.add(item.url);
+      combined.push(item);
+    }
+
+    if (combined.length === 0) return [];
+
+    // Score by query relevance so exact matches (e.g. "The Mentalist", "Pulp Fiction") rank first
+    const qLower = q.toLowerCase();
+    const qWords = qLower.split(/\s+/).filter(w => w.length > 1);
+
+    combined.sort((a, b) => {
+      const aTitle = String(a.title || '').toLowerCase();
+      const bTitle = String(b.title || '').toLowerCase();
+      let aScore = 0;
+      let bScore = 0;
+      if (aTitle === qLower) aScore += 1000;
+      if (bTitle === qLower) bScore += 1000;
+      if (aTitle.startsWith(qLower)) aScore += 500;
+      if (bTitle.startsWith(qLower)) bScore += 500;
+      if (aTitle.includes(qLower)) aScore += 250;
+      if (bTitle.includes(qLower)) bScore += 250;
+      for (const w of qWords) {
+        if (aTitle.includes(w)) aScore += 50;
+        if (bTitle.includes(w)) bScore += 50;
+      }
+      return bScore - aScore;
     });
 
-    let json;
-    try {
-      json = JSON.parse(text);
-    } catch (_) {
-      return [];
-    }
-
-    const results = [];
-    const list = [
-      ...(Array.isArray(json.series) ? json.series : []),
-      ...(Array.isArray(json.movies) ? json.movies : [])
-    ];
-
-    for (const item of list) {
-      if (!item.url || !item.title) continue;
-      const isSeries = item.type === 'series' || item.url.includes('/dizi/');
-      const itemUrl = makeAbsolute(item.url);
-      const poster = item.poster ? makeAbsolute(item.poster) : '';
-      const title = cleanText(item.title);
-
-      results.push({
-        id: itemUrl,
-        title: title,
-        url: itemUrl,
-        href: itemUrl,
-        image: poster,
-        poster: poster,
-        coverUrl: poster,
-        isSeries: isSeries,
-        type: isSeries ? 'series' : 'movie'
-      });
-    }
-
-    return results;
+    return combined.slice(0, 40);
   } catch (err) {
     return [];
   }
@@ -230,7 +318,6 @@ async function extractEpisodes(targetUrl) {
     }
 
     if (!allEpisodes.length) {
-      // Fallback single episode
       allEpisodes.push({
         id: targetUrl,
         title: '1. Bölüm',
@@ -338,13 +425,9 @@ async function extractStreamUrl(pageUrl) {
     };
   } catch (err) {
     return {
-      url: pageUrl,
-      streams: ['Source', pageUrl],
-      headers: {},
-      streamType: 'hls',
-      quality: '1080p',
+      streams: [],
       subtitles: [],
-      servers: []
+      error: { message: err ? err.message : 'Dizigom stream extraction failed' }
     };
   }
 }
@@ -367,51 +450,16 @@ async function extractSubtitles(episodeUrl) {
 async function discoveryHome() {
   try {
     const html = await httpGet(BASE_URL + '/');
-    const items = [];
-    const seen = new Set();
-    const linkRegex = /<a[^>]+href="([^"]*\/(?:dizi|film)\/[^"#?]+)"[^>]*>([\s\S]*?)<\/a>/gi;
-    let m;
-
-    while ((m = linkRegex.exec(html)) !== null) {
-      const itemUrl = makeAbsolute(m[1]);
-      if (seen.has(itemUrl)) continue;
-      seen.add(itemUrl);
-
-      const block = m[2];
-      const imgMatch = block.match(/src="([^"]+)"/i);
-      const titleMatch = block.match(/<(?:h2|h3|h4|span|div|p)[^>]*class="[^"]*(?:title|name|font-semibold)[^"]*"[^>]*>([\s\S]*?)<\//i);
-      let title = titleMatch ? cleanText(titleMatch[1]) : '';
-      if (!title) {
-        const slug = itemUrl.split('/').filter(Boolean).pop();
-        title = slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-      }
-      const cover = imgMatch ? makeAbsolute(imgMatch[1]) : '';
-      const isSeries = itemUrl.includes('/dizi/');
-
-      items.push({
-        id: itemUrl,
-        title: title,
-        url: itemUrl,
-        href: itemUrl,
-        image: cover,
-        poster: cover,
-        coverUrl: cover,
-        isSeries: isSeries,
-        type: isSeries ? 'series' : 'movie'
-      });
-      if (items.length >= 30) break;
-    }
-
+    const items = parseDizigomCards(html);
     const sections = [];
     if (items.length > 0) {
       sections.push({
         id: 'dizigom_popular',
         title: 'Popüler Dizi ve Filmler',
         type: 'featured',
-        items: items
+        items: items.slice(0, 30)
       });
     }
-
     return sections;
   } catch (err) {
     return [];
