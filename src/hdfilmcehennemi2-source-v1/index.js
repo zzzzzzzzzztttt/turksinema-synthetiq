@@ -9,6 +9,7 @@
  *   - Dedicated Subtitled (Original Audio + Turkish CC) and Dubbed (Turkish Audio) stream isolation
  *   - Zero dual-audio conflicts on iOS AVPlayer (selects dedicated audio variant)
  *   - Direct extraction of inlined WebVTT subtitles
+ *   - Universal support for string URLs, episode objects, and series auto-routing
  */
 
 const BASE_URL = 'https://www.hdfilmcehennemi2.biz';
@@ -28,7 +29,11 @@ function cleanText(text) {
 
 function makeAbsolute(path, base = BASE_URL) {
   if (!path) return '';
-  const trimmed = String(path).trim();
+  if (typeof path === 'object' && path !== null) {
+    path = path.url || path.id || path.href || path.targetUrl || '';
+  }
+  let trimmed = String(path).trim();
+  if (!trimmed || trimmed === '[object Object]') return '';
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
   if (trimmed.startsWith('//')) return 'https:' + trimmed;
   const cleanBase = base.replace(/\/+$/, '');
@@ -41,6 +46,16 @@ function normalizePageUrl(url) {
     u += '/';
   }
   return u;
+}
+
+function resolvePageUrl(input) {
+  if (!input) return '';
+  if (typeof input === 'object' && input !== null) {
+    input = input.url || input.id || input.href || input.targetUrl || input.pageUrl || '';
+  }
+  let str = String(input).trim();
+  if (!str || str === '[object Object]') return '';
+  return normalizePageUrl(str);
 }
 
 /**
@@ -199,7 +214,7 @@ async function searchResults(query) {
  */
 async function extractDetails(pageUrl) {
   try {
-    const targetUrl = normalizePageUrl(pageUrl);
+    const targetUrl = resolvePageUrl(pageUrl);
     const html = await httpGet(targetUrl);
 
     // Title
@@ -265,13 +280,14 @@ async function extractDetails(pageUrl) {
       type: isSeries ? 'series' : 'movie'
     };
   } catch (err) {
+    const fallbackUrl = resolvePageUrl(pageUrl);
     return {
-      id: pageUrl,
+      id: fallbackUrl,
       title: 'HDFilmCehennemi Media',
       description: '',
       poster: '',
-      isSeries: pageUrl.includes('/dizi/'),
-      type: pageUrl.includes('/dizi/') ? 'series' : 'movie'
+      isSeries: fallbackUrl.includes('/dizi/'),
+      type: fallbackUrl.includes('/dizi/') ? 'series' : 'movie'
     };
   }
 }
@@ -281,7 +297,7 @@ async function extractDetails(pageUrl) {
  */
 async function extractEpisodes(pageUrl) {
   try {
-    const targetUrl = normalizePageUrl(pageUrl);
+    const targetUrl = resolvePageUrl(pageUrl);
     const isSeries = targetUrl.includes('/dizi/');
 
     // For movies, return a single episode
@@ -289,10 +305,15 @@ async function extractEpisodes(pageUrl) {
       return [
         {
           id: targetUrl,
-          title: 'Film',
-          episodeNumber: 1,
+          title: 'Full Movie',
           seasonNumber: 1,
-          url: targetUrl
+          episodeNumber: 1,
+          season: 1,
+          episode: 1,
+          url: targetUrl,
+          href: targetUrl,
+          subAvailable: true,
+          dubAvailable: true
         }
       ];
     }
@@ -306,7 +327,7 @@ async function extractEpisodes(pageUrl) {
     let m;
 
     while ((m = epRegex.exec(html)) !== null) {
-      const epUrl = normalizePageUrl(m[1]);
+      const epUrl = resolvePageUrl(m[1]);
       if (seen.has(epUrl)) continue;
       seen.add(epUrl);
 
@@ -320,7 +341,12 @@ async function extractEpisodes(pageUrl) {
         title: epTitle,
         episodeNumber: episodeNum,
         seasonNumber: seasonNum,
-        url: epUrl
+        season: seasonNum,
+        episode: episodeNum,
+        url: epUrl,
+        href: epUrl,
+        subAvailable: true,
+        dubAvailable: true
       });
     }
 
@@ -336,17 +362,28 @@ async function extractEpisodes(pageUrl) {
         title: 'Bölüm 1',
         episodeNumber: 1,
         seasonNumber: 1,
-        url: targetUrl
+        season: 1,
+        episode: 1,
+        url: targetUrl,
+        href: targetUrl,
+        subAvailable: true,
+        dubAvailable: true
       }
     ];
   } catch (_) {
+    const fallbackUrl = resolvePageUrl(pageUrl);
     return [
       {
-        id: pageUrl,
+        id: fallbackUrl,
         title: 'Bölüm 1',
         episodeNumber: 1,
         seasonNumber: 1,
-        url: pageUrl
+        season: 1,
+        episode: 1,
+        url: fallbackUrl,
+        href: fallbackUrl,
+        subAvailable: true,
+        dubAvailable: true
       }
     ];
   }
@@ -357,21 +394,76 @@ async function extractEpisodes(pageUrl) {
  */
 async function extractStreamUrl(pageUrl, lang) {
   try {
-    const targetUrl = normalizePageUrl(pageUrl);
+    let targetUrl = resolvePageUrl(pageUrl);
     const want = String(lang || 'sub').trim().toLowerCase() === 'dub' ? 'dub' : 'sub';
 
-    const html = await httpGet(targetUrl);
-
-    // Extract videoPlayerData JSON
-    const match = html.match(/x-data="videoPlayerData\(JSON\.parse\('([^']+)'\),\s*'([^']*)'/);
-    if (!match) {
-      throw new Error('videoPlayerData not found on page');
+    // If a series main page was passed without an episode slug, automatically route to Episode 1
+    if (targetUrl.includes('/dizi/') && !targetUrl.includes('/bolum-')) {
+      const epList = await extractEpisodes(targetUrl);
+      if (epList && epList.length > 0 && epList[0].url) {
+        targetUrl = resolvePageUrl(epList[0].url);
+      }
     }
 
-    const rawJson = match[1].replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+    const html = await httpGet(targetUrl);
+    if (!html) {
+      throw new Error(`Failed to load page (empty response from ${targetUrl})`);
+    }
+
+    // Multi-strategy videoPlayerData extraction
+    let rawJson = null;
+
+    // Strategy 1: Flexible Regex supporting single/double quotes, spaces, and newlines
+    const vpdMatch = html.match(/videoPlayerData\s*\(\s*JSON\.parse\s*\(\s*(['"])([\s\S]*?)\1\s*\)\s*,\s*['"]([^'"]*)['"]/i);
+    if (vpdMatch) {
+      rawJson = vpdMatch[2];
+    }
+
+    // Strategy 2: Direct substring extraction between JSON.parse(' and ')
+    if (!rawJson) {
+      const vpdIdx = html.indexOf('videoPlayerData');
+      if (vpdIdx !== -1) {
+        const parseIdx = html.indexOf('JSON.parse(', vpdIdx);
+        if (parseIdx !== -1 && parseIdx - vpdIdx < 120) {
+          const quoteChar = html[parseIdx + 11];
+          if (quoteChar === "'" || quoteChar === '"') {
+            const start = parseIdx + 12;
+            let searchPos = start;
+            while ((searchPos = html.indexOf(quoteChar, searchPos)) !== -1) {
+              const after = html.substring(searchPos + 1, searchPos + 15).trim();
+              if (after.startsWith(')') || after.startsWith(',')) {
+                rawJson = html.substring(start, searchPos);
+                break;
+              }
+              searchPos++;
+            }
+          }
+        }
+      }
+    }
+
+    // Strategy 3: Direct JSON object extraction containing dual/en/tr
+    if (!rawJson) {
+      const directMatch = html.match(/\{(?:\u0022|\\")?(?:dual|en|tr|sub)(?:\u0022|\\")?\s*:\s*\[[\s\S]*?\]\s*\}/);
+      if (directMatch) {
+        rawJson = directMatch[0];
+      }
+    }
+
+    if (!rawJson) {
+      if (html.includes('cf-browser-verification') || html.includes('Just a moment...')) {
+        throw new Error('Cloudflare verification triggered on target page');
+      }
+      if (html.includes('404 Not Found') || html.includes('<title>404')) {
+        throw new Error(`Target page returned 404 Not Found: ${targetUrl}`);
+      }
+      throw new Error(`videoPlayerData not found on page (${targetUrl}, length: ${html.length})`);
+    }
+
+    const unescaped = rawJson.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
     let parsed;
     try {
-      parsed = JSON.parse(rawJson);
+      parsed = JSON.parse(unescaped);
     } catch (e) {
       throw new Error(`Failed to parse videoPlayerData: ${e.message}`);
     }
@@ -497,13 +589,28 @@ async function extractStreamUrl(pageUrl, lang) {
         },
         streamType: 'hls',
         lang: want,
+        audioLanguage: want === 'dub' ? 'tr' : 'en',
+        audioLanguages: [want === 'dub' ? 'tr' : 'en'],
         quality: '1080p',
         subtitles: subtitles
       }
     ];
 
+    const flatStreams = [
+      (want === 'dub' ? 'dub ' : 'sub ') + '1080p', finalStreamUrl,
+      'Auto 1080p', finalStreamUrl
+    ];
+
     return {
-      streams: servers,
+      url: finalStreamUrl,
+      streamUrl: finalStreamUrl,
+      streamType: 'hls',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://vidmoly.net/'
+      },
+      streams: flatStreams,
+      servers: servers,
       subtitles: subtitles
     };
   } catch (err) {
@@ -534,7 +641,7 @@ async function discoveryHome() {
     let m;
 
     while ((m = cardRegex.exec(html)) !== null) {
-      const fullUrl = normalizePageUrl(m[1]);
+      const fullUrl = resolvePageUrl(m[1]);
       if (seen.has(fullUrl)) continue;
       seen.add(fullUrl);
 
