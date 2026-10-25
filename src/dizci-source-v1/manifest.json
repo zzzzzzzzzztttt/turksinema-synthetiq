@@ -1,0 +1,53 @@
+{
+  "id": "dizci-source-v1",
+  "name": "Dizci",
+  "contentType": "video",
+  "language": "tr",
+  "contractVersion": 3,
+  "moduleVersion": "1.0.0",
+  "version": "1.0.0",
+  "moduleFamilyId": "dizci_source_v1",
+  "moduleIdentity": "SP-VID-997-DZCI",
+  "moduleIdentityNumber": 997,
+  "releaseTrack": "stable",
+  "presentation": {
+    "category": "Movies & TV",
+    "purpose": "Western Movies & Series with Dedicated English Audio (Altyazılı) and Turkish Dub Streams",
+    "recommended": true,
+    "language": "Turkish Sub/Dub",
+    "languages": [
+      "sub",
+      "dub"
+    ],
+    "iconUrl": "https://www.google.com/s2/favicons?domain=dizci.net&sz=128"
+  },
+  "config": {
+    "language": "Turkish",
+    "contentLanguage": "tr",
+    "baseUrl": "https://dizci.net",
+    "presentation": {
+      "category": "Movies & TV",
+      "purpose": "Western Movies & Series with Dedicated English Audio (Altyazılı) and Turkish Dub Streams",
+      "recommended": true,
+      "language": "Turkish Sub/Dub",
+      "languages": [
+        "sub",
+        "dub"
+      ],
+      "iconUrl": "https://www.google.com/s2/favicons?domain=dizci.net&sz=128"
+    },
+    "runtime": {
+      "entry": "index.js",
+      "mode": "local"
+    },
+    "capabilities": {
+      "discovery_v1": true
+    },
+    "caps": {
+      "homeMaxResults": 40,
+      "maxResponseBytes": 5242880,
+      "timeoutMs": 30000,
+      "maxConcurrentRequests": 4
+    }
+  }
+}

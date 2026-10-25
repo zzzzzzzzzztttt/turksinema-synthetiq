@@ -3,15 +3,71 @@
   "repositoryId": "turksinema-synthetiq",
   "name": "TurkSinema Synthetiq Repository",
   "enabled": true,
-  "publishedAtMs": 1792886327076,
+  "publishedAtMs": 1792926153534,
   "bundle": {
-    "version": 7,
+    "version": 8,
     "minAppVersion": "8.0.0",
-    "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizimom-source-v1.zip",
-    "packagePath": "/modules/dizimom-source-v1.zip",
-    "sha256": "55e11d240b2e783f35a14f7c8aa223851ffc8171203c96c8afcb725bd8588b63"
+    "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizci-source-v1.zip",
+    "packagePath": "/modules/dizci-source-v1.zip",
+    "sha256": "325480d6ab226820a2d4db4470d8fa8ebfcb6a97fab482791a09d4a955b6bb99"
   },
   "modules": [
+    {
+      "moduleId": "dizci-source-v1",
+      "moduleFamilyId": "dizci_source_v1",
+      "moduleIdentity": "SP-VID-997-DZCI",
+      "moduleIdentityNumber": 997,
+      "contentType": "video",
+      "version": "1.0.0",
+      "moduleVersion": "1.0.0",
+      "minAppVersion": "8.0.0",
+      "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizci-source-v1.zip",
+      "packagePath": "/modules/dizci-source-v1.zip",
+      "sha256": "325480d6ab226820a2d4db4470d8fa8ebfcb6a97fab482791a09d4a955b6bb99",
+      "publishedAtMs": 1792926153534,
+      "changelog": [
+        "1.0.0: Dedicated Dizci module with separate Sub (English original audio) and Dub (Turkish) streams."
+      ],
+      "presentation": {
+        "category": "Movies & TV",
+        "purpose": "Western Movies & Series with Dedicated English Audio (Altyazılı) and Turkish Dub Streams",
+        "recommended": true,
+        "language": "Turkish Sub/Dub",
+        "languages": [
+          "sub",
+          "dub"
+        ],
+        "iconUrl": "https://www.google.com/s2/favicons?domain=dizci.net&sz=128"
+      }
+    },
+    {
+      "moduleId": "diziyou-source-v1",
+      "moduleFamilyId": "diziyou_source_v1",
+      "moduleIdentity": "SP-VID-998-DZYU",
+      "moduleIdentityNumber": 998,
+      "contentType": "video",
+      "version": "1.0.0",
+      "moduleVersion": "1.0.0",
+      "minAppVersion": "8.0.0",
+      "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/diziyou-source-v1.zip",
+      "packagePath": "/modules/diziyou-source-v1.zip",
+      "sha256": "94041f28783dd32955272a7447934f5ed986a729ae9db49799f676c376d18c9c",
+      "publishedAtMs": 1792926153534,
+      "changelog": [
+        "1.0.0: Dedicated Diziyou module with direct adaptive HLS streams in original English audio with Turkish subtitles."
+      ],
+      "presentation": {
+        "category": "Movies & TV",
+        "purpose": "Popular Foreign TV Series with Clean English Audio and Hardcoded Turkish Subtitles",
+        "recommended": true,
+        "language": "Turkish Sub/Dub",
+        "languages": [
+          "sub",
+          "dub"
+        ],
+        "iconUrl": "https://www.google.com/s2/favicons?domain=diziyou.one&sz=128"
+      }
+    },
     {
       "moduleId": "dizimom-source-v1",
       "moduleFamilyId": "dizimom_source_v1",
@@ -23,8 +79,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizimom-source-v1.zip",
       "packagePath": "/modules/dizimom-source-v1.zip",
-      "sha256": "55e11d240b2e783f35a14f7c8aa223851ffc8171203c96c8afcb725bd8588b63",
-      "publishedAtMs": 1792886327076,
+      "sha256": "6fc577ba03fddc7f2a06f7592babeb9be701eab50f7341a6932036ba5c901511",
+      "publishedAtMs": 1792926153534,
       "changelog": [
         "1.0.0: Dedicated DiziMom module with native iOS AVPlayer multi-audio HLS track switching."
       ],
@@ -41,6 +97,34 @@
       }
     },
     {
+      "moduleId": "dizigom-source-v1",
+      "moduleFamilyId": "dizigom_source_v1",
+      "moduleIdentity": "SP-VID-993-DZGM",
+      "moduleIdentityNumber": 993,
+      "contentType": "video",
+      "version": "1.0.0",
+      "moduleVersion": "1.0.0",
+      "minAppVersion": "8.0.0",
+      "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizigom-source-v1.zip",
+      "packagePath": "/modules/dizigom-source-v1.zip",
+      "sha256": "98dd315fda9819bb69d041f8e98c96dadb489ea97a4ba7ea3652e38f510881de",
+      "publishedAtMs": 1792926153534,
+      "changelog": [
+        "1.0.0: Dedicated Dizigom module with instant autocomplete search, multi-season parser, and inlined Turkish subtitles."
+      ],
+      "presentation": {
+        "category": "Movies & TV",
+        "purpose": "Turkish & Global Series, Asian Dramas & Movies with Dual Audio & Inlined WebVTT Subtitles",
+        "recommended": true,
+        "language": "Turkish Sub/Dub",
+        "languages": [
+          "sub",
+          "dub"
+        ],
+        "iconUrl": "https://www.google.com/s2/favicons?domain=dizigom3.top&sz=128"
+      }
+    },
+    {
       "moduleId": "animland-source-v1",
       "moduleFamilyId": "animland_source_v1",
       "moduleIdentity": "SP-VID-992-ANML",
@@ -51,8 +135,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animland-source-v1.zip",
       "packagePath": "/modules/animland-source-v1.zip",
-      "sha256": "9315c803f9c8a64acda4f6edb94caccce8b20fe8c178675dbeba0c996aeea43c",
-      "publishedAtMs": 1792886327076,
+      "sha256": "1be51f3a71e18435c5000d4515d15a166d1ee88489aef0e5b06a7cb418d3653d",
+      "publishedAtMs": 1792926153534,
       "changelog": [
         "1.0.0: Dedicated Animland module with direct 1080p MP4 streams and inlined WebVTT subtitles."
       ],
@@ -79,8 +163,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animeniz-source-v1.zip",
       "packagePath": "/modules/animeniz-source-v1.zip",
-      "sha256": "43ccf70ac3bcb7f608aee86e33f91fa4003d0860f833aa4ac52581be23bf5d02",
-      "publishedAtMs": 1792886327076,
+      "sha256": "a7cf19eb19119fbcd259ad3da77e5adaa0d71ecaca0fe44a88d73eca67607548",
+      "publishedAtMs": 1792926153534,
       "changelog": [
         "1.0.0: Dedicated Animeniz module with live Next.js API search and complete flight data episode parser."
       ],
@@ -97,34 +181,6 @@
       }
     },
     {
-      "moduleId": "dizigom-source-v1",
-      "moduleFamilyId": "dizigom_source_v1",
-      "moduleIdentity": "SP-VID-993-DZGM",
-      "moduleIdentityNumber": 993,
-      "contentType": "video",
-      "version": "1.0.0",
-      "moduleVersion": "1.0.0",
-      "minAppVersion": "8.0.0",
-      "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizigom-source-v1.zip",
-      "packagePath": "/modules/dizigom-source-v1.zip",
-      "sha256": "6fa20201f070ca6be008100bbc79f78987e47a9cfd8a0364826168e825c22395",
-      "publishedAtMs": 1792886327076,
-      "changelog": [
-        "1.0.0: Dedicated Dizigom module with instant autocomplete search, multi-season parser, and inlined Turkish subtitles."
-      ],
-      "presentation": {
-        "category": "Movies & TV",
-        "purpose": "Turkish & Global Series, Asian Dramas & Movies with Dual Audio & Inlined WebVTT Subtitles",
-        "recommended": true,
-        "language": "Turkish Sub/Dub",
-        "languages": [
-          "sub",
-          "dub"
-        ],
-        "iconUrl": "https://www.google.com/s2/favicons?domain=dizigom3.top&sz=128"
-      }
-    },
-    {
       "moduleId": "anizm-source-v1",
       "moduleFamilyId": "anizm_source_v1",
       "moduleIdentity": "SP-VID-994-ANZM",
@@ -135,8 +191,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/anizm-source-v1.zip",
       "packagePath": "/modules/anizm-source-v1.zip",
-      "sha256": "985bbc598a990c654040a402b979777f8a44fdfc7c18edb40a820e4fe6e1227c",
-      "publishedAtMs": 1792886327076,
+      "sha256": "6432810a17188594af6b5fdd736f292b49fdfad7877a5176bc07a7af3fe74b4e",
+      "publishedAtMs": 1792926153534,
       "changelog": [
         "1.0.0: Dedicated Anizm module with hardcoded Turkish fansub subtitles burned into direct 1080p MP4 frames."
       ],
@@ -154,5 +210,5 @@
     }
   ],
   "version": "1.0.0",
-  "updatedAt": "2026-10-24T23:58:47.075Z"
+  "updatedAt": "2026-10-25T11:02:33.533Z"
 }

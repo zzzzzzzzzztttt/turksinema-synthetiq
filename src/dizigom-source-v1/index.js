@@ -349,8 +349,9 @@ async function extractEpisodes(targetUrl) {
 /**
  * Extract video stream handler
  */
-async function extractStreamUrl(pageUrl) {
+async function extractStreamUrl(pageUrl, lang) {
   try {
+    const want = String(lang || 'sub').trim().toLowerCase() === 'dub' ? 'dub' : 'sub';
     const html = await httpGet(pageUrl);
 
     // Find data-pv
@@ -397,11 +398,24 @@ async function extractStreamUrl(pageUrl) {
       }
     }
 
+    const defaultQuality = '1080p';
+    const streamLabel = (want === 'dub' ? 'dub ' : 'sub ') + defaultQuality;
+
     return {
       url: streamUrl,
-      streams: ['sub 1080p', streamUrl],
+      streams: [streamLabel, streamUrl, 'Auto ' + defaultQuality, streamUrl],
       streamType: 'hls',
-      quality: '1080p',
+      lang: want,
+      quality: defaultQuality,
+      defaultQuality: defaultQuality,
+      qualities: [{
+        label: defaultQuality,
+        url: streamUrl,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Referer': BASE_URL + '/'
+        }
+      }],
       servers: [{
         name: 'Pilavyer HLS',
         label: 'Dizigom · HLS (Çift Ses & Türkçe Altyazı)',

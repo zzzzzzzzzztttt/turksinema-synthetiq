@@ -6,18 +6,22 @@ In compliance with Synthetiq Player's architecture (strict 1 site per module ZIP
 
 | Module | Target Provider | Category | Features | Direct ZIP Link |
 |---|---|---|---|---|
-| **DiziMom Source** (`dizimom-source-v1`) | `ddizimom.net` | Movies & TV Series | Native iOS AVPlayer multi-audio HLS track switching (`Türkçe Dublaj` + `English Original`) | [Download ZIP](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizimom-source-v1.zip) |
-| **Dizigom Source** (`dizigom-source-v1`) | `dizigom3.top` | Movies, TV & Asian Drama | Dual Audio & inlined WebVTT Turkish subtitles, instant autocomplete search, multi-season series parser | [Download ZIP](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizigom-source-v1.zip) |
+| **Dizci Source** (`dizci-source-v1`) | `dizci.net` | Movies & TV Series | **Dedicated "Altyazılı" (English Original Audio) & "Dublaj" (Turkish Dub)** streams via VidMoly & Dzen. Instant JSON search. | [Download ZIP](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizci-source-v1.zip) |
+| **Diziyou Source** (`diziyou-source-v1`) | `diziyou.one` | TV Series (Altyazılı) | **Clean English Original Audio with Hardcoded Turkish Subtitles** via direct adaptive HLS from `storage.diziyou.one`. | [Download ZIP](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/diziyou-source-v1.zip) |
+| **DiziMom Source** (`dizimom-source-v1`) | `ddizimom.net` | Movies & TV Series | Turkish Movies & Series with Turkish Dub (`Türkçe Dublaj`) | [Download ZIP](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizimom-source-v1.zip) |
+| **Dizigom Source** (`dizigom-source-v1`) | `dizigom3.top` | Movies, TV & Asian Drama | Turkish Dub & inlined WebVTT Turkish subtitles, instant autocomplete search, multi-season series parser | [Download ZIP](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizigom-source-v1.zip) |
 | **Animland Source** (`animland-source-v1`) | `animland.net` | Anime | Direct 1080p MP4 streams (*Death Note*, *One Piece*, etc.) with pre-fetched inlined WebVTT subtitles | [Download ZIP](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animland-source-v1.zip) |
 | **Animeniz Source** (`animeniz-source-v1`) | `animeniz.com` | Anime | Live Next.js search API, complete flight-data episode parser (e.g. all 74 episodes for *Monster*), 1080p MP4 | [Download ZIP](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animeniz-source-v1.zip) |
 | **Anizm Source** (`anizm-source-v1`) | `anizm.com.tr` | Anime | Direct 1080p MP4 streams with hardcoded Turkish fansub subtitles burned into video frames (zero subtitle errors) | [Download ZIP](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/anizm-source-v1.zip) |
 
 ---
 
-## 📲 How to Install in Synthetiq Player
+## 📱 How to Install in Synthetiq Player
 
 ### Option 1: Direct Module Import (Recommended)
 1. On your iPhone, download any or all of the module ZIP files:
+   - [dizci-source-v1.zip](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizci-source-v1.zip)
+   - [diziyou-source-v1.zip](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/diziyou-source-v1.zip)
    - [dizimom-source-v1.zip](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizimom-source-v1.zip)
    - [dizigom-source-v1.zip](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizigom-source-v1.zip)
    - [animland-source-v1.zip](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animland-source-v1.zip)
@@ -40,4 +44,4 @@ In compliance with Synthetiq Player's architecture (strict 1 site per module ZIP
    ```text
    https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/repository.json
    ```
-4. All 5 modules will appear in your repository list for 1-tap installation.
+4. All 7 modules will appear in your repository list for 1-tap installation.
