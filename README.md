@@ -7,6 +7,7 @@ In compliance with Synthetiq Player's architecture (strict 1 site per module ZIP
 | Module | Target Provider | Category | Features | Direct ZIP Link |
 |---|---|---|---|---|
 | **HDFilmCehennemi Source** (`hdfilmcehennemi2-source-v1`) | `hdfilmcehennemi2.biz` | Movies & TV Series | **Dedicated "Altyazılı" (Original Audio + Turkish CC) & "Dublaj" (Turkish Audio)** streams via VIP & VidMoly. Multi-server fallback, inlined WebVTT subtitles, instant Meilisearch JSON search, and zero audio track conflicts on iOS AVPlayer. | [Download ZIP](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/hdfilmcehennemi2-source-v1.zip) |
+| **AsyaDizi Source** (`asyadizi-source-v1`) | `asyadizi.com` | Asian Dramas (K-Drama & C-Drama) | **Dedicated Asian Drama catalogue** with verified OK.ru master HLS, Mail.ru direct 720p MP4, and multi-kaynak (Kaynak 1..4) automatic fallback. High-bitrate 1080p/720p streams with zero WebTorrent/P2P junk. | [Download ZIP](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/asyadizi-source-v1.zip) |
 | **JetFilmizle Source** (`jetfilmizle-source-v1`) | `jetfilmizle.app` | Movies & TV Series | **Dedicated "Altyazılı" (Original Audio) & "Dublaj" (Turkish Audio)** streams via Gold (Direct MP4 up to 1080p), VIP & Apollo HLS. Clean JSON search API, multi-season series parser, and inlined WebVTT subtitles. | [Download ZIP](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/jetfilmizle-source-v1.zip) |
 | **Dizci Source** (`dizci-source-v1`) | `dizci.net` | Movies & TV Series | **Dedicated "Altyazılı" (English Original Audio) & "Dublaj" (Turkish Dub)** streams via VidMoly & Dzen. Instant JSON search with English movie title alias mapping (*Pulp Fiction*, *The Matrix*, *Inception*, etc.). | [Download ZIP](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizci-source-v1.zip) |
 | **Diziyou Source** (`diziyou-source-v1`) | `diziyou.one` | TV Series (Altyazılı) | **Clean English Original Audio with Hardcoded Turkish Subtitles** via direct adaptive HLS from `storage.diziyou.one`. | [Download ZIP](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/diziyou-source-v1.zip) |
@@ -23,6 +24,7 @@ In compliance with Synthetiq Player's architecture (strict 1 site per module ZIP
 ### Option 1: Direct Module Import (Recommended)
 1. On your iPhone, download any or all of the module ZIP files:
    - [hdfilmcehennemi2-source-v1.zip](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/hdfilmcehennemi2-source-v1.zip)
+   - [asyadizi-source-v1.zip](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/asyadizi-source-v1.zip)
    - [jetfilmizle-source-v1.zip](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/jetfilmizle-source-v1.zip)
    - [dizci-source-v1.zip](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizci-source-v1.zip)
    - [diziyou-source-v1.zip](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/diziyou-source-v1.zip)
@@ -48,4 +50,4 @@ In compliance with Synthetiq Player's architecture (strict 1 site per module ZIP
    ```text
    https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/repository.json
    ```
-4. All 9 modules will appear in your repository list for 1-tap installation.
+4. All 10 modules will appear in your repository list for 1-tap installation.
