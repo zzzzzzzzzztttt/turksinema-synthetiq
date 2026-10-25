@@ -59,6 +59,53 @@ function resolvePageUrl(input) {
 }
 
 /**
+ * Pure JavaScript Base64 decode (works in JavaScriptCore, V8, and standard runtimes)
+ */
+function base64Decode(str) {
+  if (!str) return '';
+  if (typeof Buffer !== 'undefined') {
+    try {
+      return Buffer.from(str, 'base64').toString('utf8');
+    } catch (_) {}
+  }
+  if (typeof atob === 'function') {
+    try {
+      return atob(str);
+    } catch (_) {}
+  }
+
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+  let output = '';
+  const input = String(str).replace(/[^A-Za-z0-9\+\/\=]/g, '');
+  let i = 0;
+
+  while (i < input.length) {
+    const enc1 = chars.indexOf(input.charAt(i++));
+    const enc2 = chars.indexOf(input.charAt(i++));
+    const enc3 = chars.indexOf(input.charAt(i++));
+    const enc4 = chars.indexOf(input.charAt(i++));
+
+    const chr1 = (enc1 << 2) | (enc2 >> 4);
+    const chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+    const chr3 = ((enc3 & 3) << 6) | enc4;
+
+    output += String.fromCharCode(chr1);
+    if (enc3 !== 64 && enc3 !== -1) {
+      output += String.fromCharCode(chr2);
+    }
+    if (enc4 !== 64 && enc4 !== -1) {
+      output += String.fromCharCode(chr3);
+    }
+  }
+
+  try {
+    return decodeURIComponent(escape(output));
+  } catch (_) {
+    return output;
+  }
+}
+
+/**
  * Universal HTTP GET supporting iOS Synthetiq fetchv2 and standard fetch
  */
 async function httpGet(url, customHeaders = {}) {
@@ -500,9 +547,7 @@ async function extractStreamUrl(pageUrl, lang) {
     // Decode embed URL
     let embedUrl = '';
     if (molySource.template) {
-      const decodedTmpl = (typeof Buffer !== 'undefined')
-        ? Buffer.from(molySource.template, 'base64').toString('utf8')
-        : atob(molySource.template);
+      const decodedTmpl = base64Decode(molySource.template);
       const replaced = decodedTmpl.replace('{url}', molySource.link).replace('{slug}', molySource.slug);
       const srcMatch = replaced.match(/(?:src|data-src)="([^"]+)"/i);
       if (srcMatch) embedUrl = srcMatch[1];
