@@ -3,13 +3,13 @@
   "repositoryId": "turksinema-synthetiq",
   "name": "TurkSinema Synthetiq Repository",
   "enabled": true,
-  "publishedAtMs": 1792936128764,
+  "publishedAtMs": 1792937152544,
   "bundle": {
-    "version": 11,
+    "version": 12,
     "minAppVersion": "8.0.0",
     "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/hdfilmkedisi-source-v1.zip",
     "packagePath": "/modules/hdfilmkedisi-source-v1.zip",
-    "sha256": "aa1b94efb74ba631d891fc8ff8a80ddf414e4bc0737d9dde2bd452cf0cb08039"
+    "sha256": "a869c3647bea8bd952954329cabc354c696145e1d6c5d3b160d22469ce694a83"
   },
   "modules": [
     {
@@ -18,14 +18,15 @@
       "moduleIdentity": "SP-VID-999-HDFK",
       "moduleIdentityNumber": 999,
       "contentType": "video",
-      "version": "1.0.0",
-      "moduleVersion": "1.0.0",
+      "version": "1.0.1",
+      "moduleVersion": "1.0.1",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/hdfilmkedisi-source-v1.zip",
       "packagePath": "/modules/hdfilmkedisi-source-v1.zip",
-      "sha256": "aa1b94efb74ba631d891fc8ff8a80ddf414e4bc0737d9dde2bd452cf0cb08039",
-      "publishedAtMs": 1792936128764,
+      "sha256": "a869c3647bea8bd952954329cabc354c696145e1d6c5d3b160d22469ce694a83",
+      "publishedAtMs": 1792937152544,
       "changelog": [
+        "1.0.1: Fixed Flutter fetchv2 JSON payload reading and URL fragment handling in Synthetiq Player.",
         "1.0.0: Dedicated HDFilmKedisi module with native Apple HLS dual audio (Original English & Turkish Dub) and inlined WebVTT subtitles."
       ],
       "presentation": {
@@ -51,8 +52,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizci-source-v1.zip",
       "packagePath": "/modules/dizci-source-v1.zip",
-      "sha256": "5028309acae1c9f82f8e957b5bc7e286f7336c85754bb120c22e7cf0e757bd02",
-      "publishedAtMs": 1792936128764,
+      "sha256": "ed5a9d8772343c4c2035ccb5f4f7e785cb7a608551fe2bec95d5feba65ff5c99",
+      "publishedAtMs": 1792937152544,
       "changelog": [
         "1.0.0: Dedicated Dizci module with separate Sub (English original audio) and Dub (Turkish) streams."
       ],
@@ -79,8 +80,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/diziyou-source-v1.zip",
       "packagePath": "/modules/diziyou-source-v1.zip",
-      "sha256": "27d7ce29afd224d252b7ab7949bff19843927cbb9a1f6463c3f0f145f106ad9c",
-      "publishedAtMs": 1792936128764,
+      "sha256": "67b964d64b95c7b6a000d5bedc0cc040023dc8b42a7dc8dc984ee1ce4e2e1378",
+      "publishedAtMs": 1792937152544,
       "changelog": [
         "1.0.0: Dedicated Diziyou module with direct adaptive HLS streams in original English audio with Turkish subtitles."
       ],
@@ -107,8 +108,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizimom-source-v1.zip",
       "packagePath": "/modules/dizimom-source-v1.zip",
-      "sha256": "41bbba2ec5c344573043acb1a72686a5224a005a1d67e8617f5cdbdcf3f10cca",
-      "publishedAtMs": 1792936128764,
+      "sha256": "bb883922bffeae7299d847aa1e845562a8b2a97fd30e26ea61ab3826884c3276",
+      "publishedAtMs": 1792937152544,
       "changelog": [
         "1.0.0: Dedicated DiziMom module with native iOS AVPlayer multi-audio HLS track switching."
       ],
@@ -135,8 +136,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizigom-source-v1.zip",
       "packagePath": "/modules/dizigom-source-v1.zip",
-      "sha256": "e668084741968a5e8d84b444dd154559f19c479e41ac243ccbb2d3577e9851e1",
-      "publishedAtMs": 1792936128764,
+      "sha256": "ac6261410fbbf44314d8e3639d00e74f80c8ed62af1c0265d5af62240ed2cd89",
+      "publishedAtMs": 1792937152544,
       "changelog": [
         "1.0.0: Dedicated Dizigom module with instant autocomplete search, multi-season parser, and inlined Turkish subtitles."
       ],
@@ -163,8 +164,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animland-source-v1.zip",
       "packagePath": "/modules/animland-source-v1.zip",
-      "sha256": "1f18830f13502cc79315601e0002a9a3723bd461c04f525d8ff43dad8dfb0a07",
-      "publishedAtMs": 1792936128764,
+      "sha256": "c4ddba7bcaab16847ce4b0a562d554850130b79061c841303db36b5abc61d5ea",
+      "publishedAtMs": 1792937152544,
       "changelog": [
         "1.0.0: Dedicated Animland module with direct 1080p MP4 streams and inlined WebVTT subtitles."
       ],
@@ -191,8 +192,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animeniz-source-v1.zip",
       "packagePath": "/modules/animeniz-source-v1.zip",
-      "sha256": "3524067c4406ca3e12727c4ea9f1710ef68451a538879a9e7ab6aa8bbc1c4335",
-      "publishedAtMs": 1792936128764,
+      "sha256": "ecb1b79ed916ff4cc972d5789780c33d8c1d1555179dbc43aba5c5d44e361c32",
+      "publishedAtMs": 1792937152544,
       "changelog": [
         "1.0.0: Dedicated Animeniz module with live Next.js API search and complete flight data episode parser."
       ],
@@ -219,8 +220,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/anizm-source-v1.zip",
       "packagePath": "/modules/anizm-source-v1.zip",
-      "sha256": "34b2d261a8e8b9769bc385ba4703ecde29143a1dbf8997544361a6eb278fba37",
-      "publishedAtMs": 1792936128764,
+      "sha256": "60f796732538668b63d41d73fcddfee8b0e49a1eaff1b8e5ba983f2d7d8dcd60",
+      "publishedAtMs": 1792937152544,
       "changelog": [
         "1.0.0: Dedicated Anizm module with hardcoded Turkish fansub subtitles burned into direct 1080p MP4 frames."
       ],
@@ -238,5 +239,5 @@
     }
   ],
   "version": "1.0.0",
-  "updatedAt": "2026-10-25T13:48:48.762Z"
+  "updatedAt": "2026-10-25T14:05:52.543Z"
 }

@@ -73,6 +73,36 @@ const TITLE_ALIASES = {
 };
 
 /**
+ * Universal response body reader supporting Flutter's fetchv2 and standard fetch
+ */
+async function readResponseBody(res) {
+  if (!res) return '';
+  // 1. If Flutter parsed JSON into res.json (object or async function)
+  if (res.json != null) {
+    try {
+      const v = typeof res.json === 'function' ? await res.json() : res.json;
+      if (v != null) return typeof v === 'string' ? v : JSON.stringify(v);
+    } catch (_) {}
+  }
+  // 2. If res.body is a string
+  if (typeof res.body === 'string' && res.body.length) return res.body;
+  // 3. If res.body is an object/map
+  if (typeof res.body === 'object' && res.body !== null) {
+    try {
+      return JSON.stringify(res.body);
+    } catch (_) {}
+  }
+  // 4. If res.text is function
+  if (typeof res.text === 'function') {
+    try {
+      const t = await res.text();
+      if (typeof t === 'string' && t.length) return t;
+    } catch (_) {}
+  }
+  return '';
+}
+
+/**
  * Universal HTTP GET supporting iOS Synthetiq fetchv2 and standard fetch
  */
 async function httpGet(url, customHeaders = {}) {
@@ -91,25 +121,7 @@ async function httpGet(url, customHeaders = {}) {
     res = await fetch(url, { method: 'GET', headers });
   }
 
-  if (!res) return '';
-
-  if (typeof res.body === 'string' && res.body) return res.body;
-
-  if (typeof res.text === 'function') {
-    try {
-      const t = await res.text();
-      if (typeof t === 'string' && t) return t;
-    } catch (_) {}
-  }
-
-  if (res.json != null) {
-    try {
-      const v = typeof res.json === 'function' ? await res.json() : res.json;
-      if (v != null) return typeof v === 'string' ? v : JSON.stringify(v);
-    } catch (_) {}
-  }
-
-  return '';
+  return await readResponseBody(res);
 }
 
 /**
@@ -149,24 +161,36 @@ async function httpPost(url, bodyData, isJson = true, customHeaders = {}) {
     res = await fetch(url, { method: 'POST', headers, body: bodyStr });
   }
 
-  if (!res) return { body: '', headers: {}, res: null };
+  if (!res) return { body: '', json: null, headers: {}, res: null };
+
+  let parsedJson = null;
+  if (res.json != null && typeof res.json !== 'function') {
+    parsedJson = res.json;
+  } else if (typeof res.json === 'function') {
+    try {
+      parsedJson = await res.json();
+    } catch (_) {}
+  } else if (typeof res.body === 'object' && res.body !== null) {
+    parsedJson = res.body;
+  }
 
   let textBody = '';
-  if (typeof res.body === 'string' && res.body) {
-    textBody = res.body;
-  } else if (typeof res.text === 'function') {
+  if (parsedJson && typeof parsedJson === 'object') {
     try {
-      textBody = await res.text();
+      textBody = JSON.stringify(parsedJson);
     } catch (_) {}
-  } else if (res.json != null) {
-    try {
-      const v = typeof res.json === 'function' ? await res.json() : res.json;
-      textBody = typeof v === 'string' ? v : JSON.stringify(v);
-    } catch (_) {}
+  } else {
+    textBody = await readResponseBody(res);
+    if (textBody) {
+      try {
+        parsedJson = JSON.parse(textBody);
+      } catch (_) {}
+    }
   }
 
   return {
     body: textBody,
+    json: parsedJson,
     headers: res.headers || {},
     res: res
   };
@@ -337,7 +361,7 @@ async function extractDetails(urlOrId) {
  * Extract episodes (Single full movie episode for movies)
  */
 async function extractEpisodes(urlOrId) {
-  const targetUrl = makeAbsolute(urlOrId);
+  const targetUrl = makeAbsolute(urlOrId).replace(/#.*$/, '');
   return [{
     id: targetUrl,
     title: 'Full Movie',
@@ -357,7 +381,7 @@ async function extractEpisodes(urlOrId) {
  */
 async function extractStreamUrl(pageUrl, lang) {
   try {
-    const targetUrl = makeAbsolute(pageUrl);
+    const targetUrl = makeAbsolute(pageUrl).replace(/#.*$/, '');
     const want = String(lang || 'sub').trim().toLowerCase() === 'dub' ? 'dub' : 'sub';
 
     const cookie = await ensureSession();
@@ -381,10 +405,12 @@ async function extractStreamUrl(pageUrl, lang) {
       'Referer': targetUrl
     });
 
-    let playData = null;
-    try {
-      playData = JSON.parse(playRes.body);
-    } catch (_) {}
+    let playData = playRes.json;
+    if (!playData && playRes.body) {
+      try {
+        playData = JSON.parse(playRes.body);
+      } catch (_) {}
+    }
 
     if (!playData || !playData.ok || !playData.src) {
       throw new Error('HDFilmKedisi: Failed to initialize player stream');
