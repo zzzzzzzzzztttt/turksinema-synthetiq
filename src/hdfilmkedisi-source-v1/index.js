@@ -468,25 +468,42 @@ async function extractStreamUrl(pageUrl, lang) {
       subtitles.push(subItem);
     }
 
-    const serverLabel = want === 'dub' ? 'Dublaj (Türkçe)' : 'Altyazılı (Original Audio)';
-    const servers = [
-      {
-        name: `HDFilmKedisi ${serverLabel}`,
-        label: `${serverLabel} · 1080p`,
+    const serverEn = {
+      name: 'HDFilmKedisi (Orijinal Ses)',
+      label: 'Orijinal Ses (English) · 1080p',
+      url: rawMasterUrl,
+      headers: headers,
+      streamType: 'hls',
+      lang: 'sub',
+      audioLanguage: 'en',
+      audioLanguages: ['en', 'tr'],
+      qualities: [{
+        label: '1080p',
         url: rawMasterUrl,
-        headers: headers,
-        streamType: 'hls',
-        lang: want,
-        audioLanguage: want === 'dub' ? 'tr' : 'en',
-        audioLanguages: ['tr', 'en'],
-        qualities: [{
-          label: '1080p',
-          url: rawMasterUrl,
-          headers: headers
-        }],
-        subtitles: subtitles
-      }
-    ];
+        headers: headers
+      }],
+      subtitles: subtitles
+    };
+
+    const serverTr = {
+      name: 'HDFilmKedisi (Türkçe Dublaj)',
+      label: 'Türkçe Dublaj · 1080p',
+      url: rawMasterUrl,
+      headers: headers,
+      streamType: 'hls',
+      lang: 'dub',
+      audioLanguage: 'tr',
+      audioLanguages: ['tr', 'en'],
+      qualities: [{
+        label: '1080p',
+        url: rawMasterUrl,
+        headers: headers
+      }],
+      subtitles: subtitles
+    };
+
+    // Provide both servers in the server picker with the requested language first
+    const servers = want === 'dub' ? [serverTr, serverEn] : [serverEn, serverTr];
 
     const streams = [
       (want === 'dub' ? 'dub ' : 'sub ') + '1080p', rawMasterUrl,
@@ -498,6 +515,8 @@ async function extractStreamUrl(pageUrl, lang) {
       streams: streams,
       streamType: 'hls',
       lang: want,
+      audioLanguage: want === 'dub' ? 'tr' : 'en',
+      audioLanguages: want === 'dub' ? ['tr', 'en'] : ['en', 'tr'],
       quality: '1080p',
       defaultQuality: '1080p',
       qualities: [{

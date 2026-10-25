@@ -3,13 +3,13 @@
   "repositoryId": "turksinema-synthetiq",
   "name": "TurkSinema Synthetiq Repository",
   "enabled": true,
-  "publishedAtMs": 1792937152544,
+  "publishedAtMs": 1792939033808,
   "bundle": {
-    "version": 12,
+    "version": 13,
     "minAppVersion": "8.0.0",
     "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/hdfilmkedisi-source-v1.zip",
     "packagePath": "/modules/hdfilmkedisi-source-v1.zip",
-    "sha256": "a869c3647bea8bd952954329cabc354c696145e1d6c5d3b160d22469ce694a83"
+    "sha256": "5d5b6743c584a29db52d4ee0256ad45a05462ee311b06985ce7e73b0c8c073d3"
   },
   "modules": [
     {
@@ -18,14 +18,15 @@
       "moduleIdentity": "SP-VID-999-HDFK",
       "moduleIdentityNumber": 999,
       "contentType": "video",
-      "version": "1.0.1",
-      "moduleVersion": "1.0.1",
+      "version": "1.0.2",
+      "moduleVersion": "1.0.2",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/hdfilmkedisi-source-v1.zip",
       "packagePath": "/modules/hdfilmkedisi-source-v1.zip",
-      "sha256": "a869c3647bea8bd952954329cabc354c696145e1d6c5d3b160d22469ce694a83",
-      "publishedAtMs": 1792937152544,
+      "sha256": "5d5b6743c584a29db52d4ee0256ad45a05462ee311b06985ce7e73b0c8c073d3",
+      "publishedAtMs": 1792939033808,
       "changelog": [
+        "1.0.2: Dedicated Orijinal Ses (English) and Türkçe Dublaj servers with explicit audioLanguage tags.",
         "1.0.1: Fixed Flutter fetchv2 JSON payload reading and URL fragment handling in Synthetiq Player.",
         "1.0.0: Dedicated HDFilmKedisi module with native Apple HLS dual audio (Original English & Turkish Dub) and inlined WebVTT subtitles."
       ],
@@ -52,8 +53,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizci-source-v1.zip",
       "packagePath": "/modules/dizci-source-v1.zip",
-      "sha256": "ed5a9d8772343c4c2035ccb5f4f7e785cb7a608551fe2bec95d5feba65ff5c99",
-      "publishedAtMs": 1792937152544,
+      "sha256": "be9b1fc19db1e0a732d1b8cecce354240898483e695877c742ffe065f6e9a7fa",
+      "publishedAtMs": 1792939033808,
       "changelog": [
         "1.0.0: Dedicated Dizci module with separate Sub (English original audio) and Dub (Turkish) streams."
       ],
@@ -80,8 +81,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/diziyou-source-v1.zip",
       "packagePath": "/modules/diziyou-source-v1.zip",
-      "sha256": "67b964d64b95c7b6a000d5bedc0cc040023dc8b42a7dc8dc984ee1ce4e2e1378",
-      "publishedAtMs": 1792937152544,
+      "sha256": "f78b03453589efdaf50864e6e79a185a596806c8b52a5f9697589c2ce82e298c",
+      "publishedAtMs": 1792939033808,
       "changelog": [
         "1.0.0: Dedicated Diziyou module with direct adaptive HLS streams in original English audio with Turkish subtitles."
       ],
@@ -108,8 +109,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizimom-source-v1.zip",
       "packagePath": "/modules/dizimom-source-v1.zip",
-      "sha256": "bb883922bffeae7299d847aa1e845562a8b2a97fd30e26ea61ab3826884c3276",
-      "publishedAtMs": 1792937152544,
+      "sha256": "3ee5718263c9e2b7b6124097f3afa31ba8e5e94fa97a31b1fdff6be729141b36",
+      "publishedAtMs": 1792939033808,
       "changelog": [
         "1.0.0: Dedicated DiziMom module with native iOS AVPlayer multi-audio HLS track switching."
       ],
@@ -136,8 +137,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizigom-source-v1.zip",
       "packagePath": "/modules/dizigom-source-v1.zip",
-      "sha256": "ac6261410fbbf44314d8e3639d00e74f80c8ed62af1c0265d5af62240ed2cd89",
-      "publishedAtMs": 1792937152544,
+      "sha256": "eee4e52bf377c265c0f3ece7424de2a0fd26e23c45e9f2269fe040ffcc01f773",
+      "publishedAtMs": 1792939033808,
       "changelog": [
         "1.0.0: Dedicated Dizigom module with instant autocomplete search, multi-season parser, and inlined Turkish subtitles."
       ],
@@ -164,8 +165,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animland-source-v1.zip",
       "packagePath": "/modules/animland-source-v1.zip",
-      "sha256": "c4ddba7bcaab16847ce4b0a562d554850130b79061c841303db36b5abc61d5ea",
-      "publishedAtMs": 1792937152544,
+      "sha256": "3734d5363faeb34a2ce53fd0ee11ba69e9289720f37b6f3a3a6728a3c8a7485d",
+      "publishedAtMs": 1792939033808,
       "changelog": [
         "1.0.0: Dedicated Animland module with direct 1080p MP4 streams and inlined WebVTT subtitles."
       ],
@@ -192,8 +193,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animeniz-source-v1.zip",
       "packagePath": "/modules/animeniz-source-v1.zip",
-      "sha256": "ecb1b79ed916ff4cc972d5789780c33d8c1d1555179dbc43aba5c5d44e361c32",
-      "publishedAtMs": 1792937152544,
+      "sha256": "cae4ac0d9a156ad01517891bcc2f1280aa537d2f328fd01057bf63db18406cd7",
+      "publishedAtMs": 1792939033808,
       "changelog": [
         "1.0.0: Dedicated Animeniz module with live Next.js API search and complete flight data episode parser."
       ],
@@ -220,8 +221,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/anizm-source-v1.zip",
       "packagePath": "/modules/anizm-source-v1.zip",
-      "sha256": "60f796732538668b63d41d73fcddfee8b0e49a1eaff1b8e5ba983f2d7d8dcd60",
-      "publishedAtMs": 1792937152544,
+      "sha256": "ffe3fcf3a7f98ace73c2b83bbf94065d05b4d8e2f31f55fa11eee1156d5fa14a",
+      "publishedAtMs": 1792939033808,
       "changelog": [
         "1.0.0: Dedicated Anizm module with hardcoded Turkish fansub subtitles burned into direct 1080p MP4 frames."
       ],
@@ -239,5 +240,5 @@
     }
   ],
   "version": "1.0.0",
-  "updatedAt": "2026-10-25T14:05:52.543Z"
+  "updatedAt": "2026-10-25T14:37:13.806Z"
 }
