@@ -79,7 +79,7 @@ async function readResponseBody(res) {
  */
 async function httpGet(url, customHeaders = {}) {
   const headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8',
     'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
     'Referer': BASE_URL + '/',
@@ -107,6 +107,13 @@ const TITLE_ALIASES = {
   'alchemy of souls': 'alchemy of souls',
   'alchemy of souls light and shadow': 'alchemy of souls',
   'ruhlarin simyasi': 'alchemy of souls',
+  'under the queens umbrella': 'umbrella',
+  'the queens umbrella': 'umbrella',
+  'queens umbrella': 'umbrella',
+  'under the queen\'s umbrella': 'umbrella',
+  'the queen\'s umbrella': 'umbrella',
+  'queen\'s umbrella': 'umbrella',
+  'kralicenin semsiyesi': 'umbrella',
   'love between fairy and devil': 'love between fairy and devil',
   'fairy and devil': 'love between fairy and devil',
   'cang lan jue': 'love between fairy and devil',
@@ -278,8 +285,8 @@ async function extractEpisodes(id) {
     const episodes = [];
     const seen = new Set();
 
-    // Match episode links: <a href="https://asyadizi.com/...-bolum-izle/">...</a>
-    const epMatches = html.matchAll(/<a[^>]+href=["'](https:\/\/asyadizi\.com\/[^\/"]+-bolum-izle\/?)["'][^>]*>([\s\S]*?)<\/a>/gi);
+    // Match episode links: <a href="https://asyadizi.com/...-bolum-izle/"> or ...-bolum/
+    const epMatches = html.matchAll(/<a[^>]+href=["'](https:\/\/asyadizi\.com\/[^\/"]+-bolum(?:-izle)?\/?)["'][^>]*>([\s\S]*?)<\/a>/gi);
     for (const m of epMatches) {
       const href = makeAbsolute(m[1]);
       if (seen.has(href)) continue;
@@ -334,6 +341,7 @@ async function extractEpisodes(id) {
 
 /**
  * OK.ru / Odnoklassniki Stream Resolver
+ * Prioritizes direct MP4 video streams over HLS to ensure seamless native iOS AVPlayer playback.
  */
 async function resolveOkRu(embedUrl) {
   try {
@@ -349,36 +357,77 @@ async function resolveOkRu(embedUrl) {
     const opts = JSON.parse(decoded);
     const meta = typeof opts.flashvars?.metadata === 'string' ? JSON.parse(opts.flashvars.metadata) : (opts.flashvars?.metadata || {});
 
-    // Option A: Master HLS
+    // Option A: Direct MP4 Video Streams (Native iOS AVPlayer safe, avoids local HLS proxy 502 & 400 errors)
+    if (meta.videos && Array.isArray(meta.videos) && meta.videos.length > 0) {
+      const order = ['full', 'hd', 'sd', 'low', 'lowest', 'mobile'];
+      const qualityLabels = {
+        'full': '1080p',
+        'hd': '720p',
+        'sd': '480p',
+        'low': '360p',
+        'lowest': '240p',
+        'mobile': '144p'
+      };
+
+      const validVideos = meta.videos.filter(v => v && v.url);
+      if (validVideos.length > 0) {
+        let best = validVideos[0];
+        for (const pref of order) {
+          const found = validVideos.find(v => v.name === pref);
+          if (found) {
+            best = found;
+            break;
+          }
+        }
+
+        const streams = [];
+        const servers = [];
+        for (const pref of order) {
+          const v = validVideos.find(item => item.name === pref);
+          if (v) {
+            const label = qualityLabels[v.name] || v.name;
+            streams.push(`${label} MP4`, v.url);
+            servers.push({
+              name: `OK.ru (${label})`,
+              url: v.url
+            });
+          }
+        }
+
+        const bestLabel = qualityLabels[best.name] || 'HD';
+        return {
+          url: best.url,
+          streamUrl: best.url,
+          format: 'mp4',
+          streamType: 'mp4',
+          quality: bestLabel,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+            'Referer': 'https://ok.ru/'
+          },
+          streams: streams.length > 0 ? streams : [`${bestLabel} MP4`, best.url],
+          servers: servers.length > 0 ? servers : [{ name: `OK.ru ${bestLabel}`, url: best.url }],
+          serverName: `OK.ru ${bestLabel}`
+        };
+      }
+    }
+
+    // Option B: Master HLS (only if direct MP4 is unavailable)
     if (meta.hlsManifestUrl) {
       return {
         url: meta.hlsManifestUrl,
+        streamUrl: meta.hlsManifestUrl,
         format: 'hls',
         streamType: 'hls',
         quality: 'Auto',
-        headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://ok.ru/' },
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+          'Referer': 'https://ok.ru/'
+        },
+        streams: ['Auto HLS', meta.hlsManifestUrl],
+        servers: [{ name: 'OK.ru HLS', url: meta.hlsManifestUrl }],
         serverName: 'OK.ru HLS'
       };
-    }
-
-    // Option B: Multi-quality MP4 from videos array
-    if (meta.videos && Array.isArray(meta.videos) && meta.videos.length > 0) {
-      const order = ['full', 'hd', 'sd', 'low', 'lowest', 'mobile'];
-      let best = meta.videos[0];
-      for (const pref of order) {
-        const found = meta.videos.find(v => v.name === pref && v.url);
-        if (found) { best = found; break; }
-      }
-      if (best && best.url) {
-        return {
-          url: best.url,
-          format: 'mp4',
-          streamType: 'mp4',
-          quality: best.name === 'full' ? '1080p' : (best.name === 'hd' ? '720p' : '480p'),
-          headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://ok.ru/' },
-          serverName: `OK.ru ${best.name.toUpperCase()}`
-        };
-      }
     }
 
     return null;
@@ -402,18 +451,38 @@ async function resolveMailRu(embedUrl) {
 
     const data = typeof metaRaw === 'string' ? JSON.parse(metaRaw) : metaRaw;
     if (data && data.videos && Array.isArray(data.videos) && data.videos.length > 0) {
-      const best = data.videos[0];
-      let directUrl = best.url;
-      if (directUrl.startsWith('//')) directUrl = 'https:' + directUrl;
-      const q = best.key || '720p';
-      return {
-        url: directUrl,
-        format: 'mp4',
-        streamType: 'mp4',
-        quality: q,
-        headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://my.mail.ru/' },
-        serverName: `Mail.ru ${q}`
-      };
+      const validVideos = data.videos.filter(v => v && v.url);
+      if (validVideos.length > 0) {
+        const best = validVideos[0];
+        let directUrl = best.url;
+        if (directUrl.startsWith('//')) directUrl = 'https:' + directUrl;
+        const q = best.key || '720p';
+
+        const streams = [];
+        const servers = [];
+        for (const v of validVideos) {
+          let u = v.url;
+          if (u.startsWith('//')) u = 'https:' + u;
+          const k = v.key || 'Direct';
+          streams.push(`${k} MP4`, u);
+          servers.push({ name: `Mail.ru (${k})`, url: u });
+        }
+
+        return {
+          url: directUrl,
+          streamUrl: directUrl,
+          format: 'mp4',
+          streamType: 'mp4',
+          quality: q,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+            'Referer': 'https://my.mail.ru/'
+          },
+          streams: streams.length > 0 ? streams : [`${q} MP4`, directUrl],
+          servers: servers.length > 0 ? servers : [{ name: `Mail.ru ${q}`, url: directUrl }],
+          serverName: `Mail.ru ${q}`
+        };
+      }
     }
     return null;
   } catch (_) {
@@ -438,10 +507,16 @@ async function resolveVidMoly(embedUrl) {
     if (m) {
       return {
         url: m[1],
+        streamUrl: m[1],
         format: 'hls',
         streamType: 'hls',
         quality: 'Auto',
-        headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidmoly.biz/' },
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+          'Referer': 'https://vidmoly.biz/'
+        },
+        streams: ['Auto HLS', m[1]],
+        servers: [{ name: 'VidMoly HLS', url: m[1] }],
         serverName: 'VidMoly HLS'
       };
     }
@@ -499,38 +574,34 @@ async function extractStreamUrl(episode, server) {
         // 1. Try OK.ru / Odnoklassniki
         if (embedUrl.includes('ok.ru') || embedUrl.includes('odnoklassniki.ru')) {
           const stream = await resolveOkRu(embedUrl);
-          if (stream) {
+          if (stream && stream.url) {
             return {
               url: stream.url,
-              streamUrl: stream.url,
-              streamType: stream.streamType,
-              format: stream.format,
-              quality: stream.quality,
-              headers: stream.headers,
-              streams: [`${stream.quality} ${stream.format.toUpperCase()}`, stream.url],
-              servers: [
-                { name: stream.serverName, url: stream.url }
-              ],
+              streamUrl: stream.streamUrl || stream.url,
+              streamType: stream.streamType || 'mp4',
+              format: stream.format || 'mp4',
+              quality: stream.quality || 'HD',
+              headers: stream.headers || {},
+              streams: stream.streams && stream.streams.length > 0 ? stream.streams : [`${stream.quality} ${(stream.format || 'mp4').toUpperCase()}`, stream.url],
+              servers: stream.servers && stream.servers.length > 0 ? stream.servers : [{ name: stream.serverName || 'Server', url: stream.url }],
               subtitles: []
             };
           }
         }
 
         // 2. Try Mail.ru
-        if (embedUrl.includes('my.mail.ru/video/embed/')) {
+        if (embedUrl.includes('my.mail.ru/video/embed/') || embedUrl.includes('mail.ru')) {
           const stream = await resolveMailRu(embedUrl);
-          if (stream) {
+          if (stream && stream.url) {
             return {
               url: stream.url,
-              streamUrl: stream.url,
-              streamType: stream.streamType,
-              format: stream.format,
-              quality: stream.quality,
-              headers: stream.headers,
-              streams: [`${stream.quality} ${stream.format.toUpperCase()}`, stream.url],
-              servers: [
-                { name: stream.serverName, url: stream.url }
-              ],
+              streamUrl: stream.streamUrl || stream.url,
+              streamType: stream.streamType || 'mp4',
+              format: stream.format || 'mp4',
+              quality: stream.quality || 'HD',
+              headers: stream.headers || {},
+              streams: stream.streams && stream.streams.length > 0 ? stream.streams : [`${stream.quality} ${(stream.format || 'mp4').toUpperCase()}`, stream.url],
+              servers: stream.servers && stream.servers.length > 0 ? stream.servers : [{ name: stream.serverName || 'Server', url: stream.url }],
               subtitles: []
             };
           }
@@ -539,18 +610,16 @@ async function extractStreamUrl(episode, server) {
         // 3. Try VidMoly
         if (embedUrl.includes('vidmoly')) {
           const stream = await resolveVidMoly(embedUrl);
-          if (stream) {
+          if (stream && stream.url) {
             return {
               url: stream.url,
-              streamUrl: stream.url,
-              streamType: stream.streamType,
-              format: stream.format,
-              quality: stream.quality,
-              headers: stream.headers,
-              streams: [`${stream.quality} ${stream.format.toUpperCase()}`, stream.url],
-              servers: [
-                { name: stream.serverName, url: stream.url }
-              ],
+              streamUrl: stream.streamUrl || stream.url,
+              streamType: stream.streamType || 'hls',
+              format: stream.format || 'hls',
+              quality: stream.quality || 'Auto',
+              headers: stream.headers || {},
+              streams: stream.streams && stream.streams.length > 0 ? stream.streams : [`${stream.quality} ${(stream.format || 'hls').toUpperCase()}`, stream.url],
+              servers: stream.servers && stream.servers.length > 0 ? stream.servers : [{ name: stream.serverName || 'Server', url: stream.url }],
               subtitles: []
             };
           }
