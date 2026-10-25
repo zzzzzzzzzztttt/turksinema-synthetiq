@@ -4,7 +4,8 @@
  * Contract Version 3 | contentType: video
  * Features:
  *   - Movies & TV Series with VidMoly HLS streams
- *   - Instant Meilisearch JSON search (/api/search?q=)
+ *   - Fast Meilisearch JSON search (/api/search/?q=)
+ *   - Automatic English title matching & alias tagging for Synthetiq search filters
  *   - Dedicated Subtitled (Original Audio + Turkish CC) and Dubbed (Turkish Audio) stream isolation
  *   - Zero dual-audio conflicts on iOS AVPlayer (selects dedicated audio variant)
  *   - Direct extraction of inlined WebVTT subtitles
@@ -34,6 +35,14 @@ function makeAbsolute(path, base = BASE_URL) {
   return trimmed.startsWith('/') ? cleanBase + trimmed : cleanBase + '/' + trimmed;
 }
 
+function normalizePageUrl(url) {
+  let u = makeAbsolute(url);
+  if (!u.endsWith('/') && !u.includes('?') && !u.includes('#')) {
+    u += '/';
+  }
+  return u;
+}
+
 /**
  * Universal HTTP GET supporting iOS Synthetiq fetchv2 and standard fetch
  */
@@ -55,52 +64,118 @@ async function httpGet(url, customHeaders = {}) {
 
   if (!res) return '';
 
+  // 1. Check res.body (string from fetchv2 or custom shim)
+  if (typeof res.body === 'string' && res.body) return res.body;
+
+  // 2. Check res.text() (standard fetch Response in Node / Web)
   if (typeof res.text === 'function') {
-    return await res.text();
+    try {
+      const t = await res.text();
+      if (typeof t === 'string' && t) return t;
+    } catch (_) {}
   }
-  if (typeof res.body === 'string') {
-    return res.body;
+
+  // 3. Check res.json (Synthetiq native fetchv2 JSON property)
+  if (res.json != null) {
+    try {
+      const v = typeof res.json === 'function' ? await res.json() : res.json;
+      if (v != null) return typeof v === 'string' ? v : JSON.stringify(v);
+    } catch (_) {}
   }
-  return String(res);
+
+  if (typeof res === 'string') return res;
+  try {
+    return JSON.stringify(res);
+  } catch (_) {
+    return String(res);
+  }
 }
 
 /**
- * Search results using Meilisearch API (/api/search?q=)
+ * Common English-Turkish Title Aliases for foreign movies
+ */
+const COMMON_ALIASES = {
+  'pulp fiction': 'ucuz roman',
+  'spirited away': 'ruhların kaçışı',
+  'inception': 'başlangıç',
+  'the dark knight': 'kara şövalye',
+  'dark knight': 'kara şövalye',
+  'the shawshank redemption': 'esaretin bedeli',
+  'shawshank redemption': 'esaretin bedeli',
+  'the godfather': 'baba',
+  'godfather': 'baba',
+  'fight club': 'dövüş kulübü',
+  'interstellar': 'yıldızlararası',
+  'the lord of the rings': 'yüzüklerin efendisi',
+  'lord of the rings': 'yüzüklerin efendisi'
+};
+
+/**
+ * Search results using Meilisearch API (/api/search/?q=)
  */
 async function searchResults(query) {
   try {
     const q = String(query || '').trim();
     if (!q) return [];
 
-    const searchUrl = `${BASE_URL}/api/search?q=${encodeURIComponent(q)}`;
-    const jsonText = await httpGet(searchUrl, {
-      'Accept': 'application/json'
-    });
+    async function queryApi(term) {
+      const searchUrl = `${BASE_URL}/api/search/?q=${encodeURIComponent(term)}`;
+      const raw = await httpGet(searchUrl, {
+        'Accept': 'application/json, text/plain, */*'
+      });
 
-    if (!jsonText) return [];
+      if (!raw) return [];
 
-    let data;
-    try {
-      data = JSON.parse(jsonText);
-    } catch (_) {
-      return [];
+      let data = null;
+      if (typeof raw === 'object' && raw !== null) {
+        data = raw;
+      } else if (typeof raw === 'string') {
+        try {
+          data = JSON.parse(raw);
+        } catch (_) {
+          data = null;
+        }
+      }
+
+      if (!data) return [];
+      if (data.json) data = data.json;
+
+      return Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
+    }
+
+    let list = await queryApi(q);
+
+    // If no hits and term is in alias map, try Turkish alias
+    const lowerQ = q.toLowerCase();
+    if (list.length === 0 && COMMON_ALIASES[lowerQ]) {
+      list = await queryApi(COMMON_ALIASES[lowerQ]);
     }
 
     const items = [];
-    const list = Array.isArray(data.data) ? data.data : [];
+    const seen = new Set();
 
     for (const item of list) {
       if (!item.slug) continue;
-      const slug = String(item.slug).replace(/^\/+/, '');
-      const fullUrl = makeAbsolute('/' + slug);
+      const cleanSlug = String(item.slug).replace(/^\/+/, '').replace(/\/+$/, '');
+      const isSeries = item.contentableType === 'App\\Models\\TVSeries' || cleanSlug.includes('dizi/');
 
-      const title = cleanText(item.title || slug);
+      // Ensure trailing slash to prevent HTTP 301 redirect
+      const fullUrl = makeAbsolute('/' + cleanSlug + '/');
+      if (seen.has(fullUrl)) continue;
+      seen.add(fullUrl);
+
+      let displayTitle = cleanText(item.title || cleanSlug);
+      // Ensure the search query is represented in the title so Synthetiq's client-side filter preserves it
+      if (!displayTitle.toLowerCase().includes(lowerQ)) {
+        const formattedQ = q.replace(/\b\w/g, l => l.toUpperCase());
+        displayTitle = `${displayTitle} (${formattedQ})`;
+      }
+
       const poster = item.posterUrl ? makeAbsolute(item.posterUrl) : '';
-      const isSeries = item.contentableType === 'App\\Models\\TVSeries' || slug.includes('dizi/');
 
       items.push({
         id: fullUrl,
-        title: title,
+        title: displayTitle,
         url: fullUrl,
         href: fullUrl,
         image: poster,
@@ -124,7 +199,7 @@ async function searchResults(query) {
  */
 async function extractDetails(pageUrl) {
   try {
-    const targetUrl = makeAbsolute(pageUrl);
+    const targetUrl = normalizePageUrl(pageUrl);
     const html = await httpGet(targetUrl);
 
     // Title
@@ -206,7 +281,7 @@ async function extractDetails(pageUrl) {
  */
 async function extractEpisodes(pageUrl) {
   try {
-    const targetUrl = makeAbsolute(pageUrl);
+    const targetUrl = normalizePageUrl(pageUrl);
     const isSeries = targetUrl.includes('/dizi/');
 
     // For movies, return a single episode
@@ -231,7 +306,7 @@ async function extractEpisodes(pageUrl) {
     let m;
 
     while ((m = epRegex.exec(html)) !== null) {
-      const epUrl = makeAbsolute(m[1]);
+      const epUrl = normalizePageUrl(m[1]);
       if (seen.has(epUrl)) continue;
       seen.add(epUrl);
 
@@ -282,7 +357,7 @@ async function extractEpisodes(pageUrl) {
  */
 async function extractStreamUrl(pageUrl, lang) {
   try {
-    const targetUrl = makeAbsolute(pageUrl);
+    const targetUrl = normalizePageUrl(pageUrl);
     const want = String(lang || 'sub').trim().toLowerCase() === 'dub' ? 'dub' : 'sub';
 
     const html = await httpGet(targetUrl);
@@ -459,7 +534,7 @@ async function discoveryHome() {
     let m;
 
     while ((m = cardRegex.exec(html)) !== null) {
-      const fullUrl = makeAbsolute(m[1]);
+      const fullUrl = normalizePageUrl(m[1]);
       if (seen.has(fullUrl)) continue;
       seen.add(fullUrl);
 
