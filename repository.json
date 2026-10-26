@@ -3,7 +3,7 @@
   "repositoryId": "turksinema-synthetiq",
   "name": "TurkSinema Synthetiq Repository",
   "enabled": true,
-  "publishedAtMs": 1793016464460,
+  "publishedAtMs": 1793019641867,
   "bundle": {
     "version": 18,
     "minAppVersion": "8.0.0",
@@ -277,19 +277,20 @@
       "moduleIdentity": "SP-VID-994-ANZM",
       "moduleIdentityNumber": 994,
       "contentType": "video",
-      "version": "1.0.0",
-      "moduleVersion": "1.0.0",
+      "version": "1.0.1",
+      "moduleVersion": "1.0.1",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/anizm-source-v1.zip",
       "packagePath": "/modules/anizm-source-v1.zip",
-      "sha256": "6cfefac0fa9a72144c5ac5406ef0e6ce0c711be3d6746459a00eb38fdd0dbc97",
-      "publishedAtMs": 1793016464460,
+      "sha256": "31d87f048d593644af03e75d39e0a5bd890bc0e97bb10c32ee29c6d6ad16b8ae",
+      "publishedAtMs": 1793019641867,
       "changelog": [
+        "1.0.1: Multi-translator and multi-source resolution (Aincrad HLS, YourUpload MP4, SendVid MP4, Vidmoly HLS), safe Dean Edwards unpacker, and structured Season/Special episode indexing.",
         "1.0.0: Dedicated Anizm module with hardcoded Turkish fansub subtitles burned into direct 1080p MP4 frames."
       ],
       "presentation": {
         "category": "Anime",
-        "purpose": "Turkish Anime with Hardcoded Fansub Subtitles & Direct MP4 Streams (Zero Subtitle Failures)",
+        "purpose": "Turkish Anime with Multi-Translator & Multi-Source Playback (Aincrad HLS, YourUpload, SendVid, Vidmoly)",
         "recommended": true,
         "language": "Turkish Sub/Dub",
         "languages": [
@@ -301,5 +302,5 @@
     }
   ],
   "version": "1.0.0",
-  "updatedAt": "2026-10-26T12:07:44.458Z"
+  "updatedAt": "2026-10-26T13:00:41.866Z"
 }

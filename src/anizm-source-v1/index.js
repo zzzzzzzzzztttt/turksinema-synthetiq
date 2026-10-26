@@ -4,8 +4,11 @@
  * Contract Version 3 | contentType: video
  * Features:
  *   - Native Aincrad (Reklamsız) high-speed CDN streaming via anizmplayer.com HLS
- *   - Automatic multi-quality resolution parsing (720p, 480p, 360p) with zero Turnstile blocks
- *   - Multi-source fallback support (Aincrad, YourUpload, Mail.ru)
+ *   - Multi-translator resolution (Lawsonia, Adonis, AkatsukiSubs, etc.) with dedicated server labels
+ *   - Multi-source mirror fallbacks (Aincrad HLS, YourUpload MP4, SendVid MP4, Vidmoly HLS, Mail.ru MP4)
+ *   - Automatic multi-quality resolution parsing (1080p, 720p, 480p, 360p) with zero Turnstile blocks
+ *   - Safe pure-JS Dean Edwards packer unpacker (zero eval, zero Node.js dependencies)
+ *   - Robust episode indexer with proper Season 1 and Specials/OVAs separation
  *   - Hardcoded Turkish fansub subtitles burned into video frames (zero subtitle loading failures)
  *   - Full iOS fetchv2 JSON bridge compatibility
  */
@@ -55,10 +58,8 @@ async function httpGet(url, customHeaders = {}) {
 
   if (!res) return '';
 
-  // 1. Check res.body (string from fetchv2 or custom shim)
   if (typeof res.body === 'string' && res.body) return res.body;
 
-  // 2. Check res.text() (standard fetch Response in Node / Web)
   if (typeof res.text === 'function') {
     try {
       const t = await res.text();
@@ -66,7 +67,6 @@ async function httpGet(url, customHeaders = {}) {
     } catch (_) {}
   }
 
-  // 3. Check res.json (Synthetiq native fetchv2 JSON property)
   if (res.json != null) {
     try {
       const v = typeof res.json === 'function' ? await res.json() : res.json;
@@ -82,7 +82,7 @@ async function httpGet(url, customHeaders = {}) {
  */
 async function httpPost(url, bodyData, customHeaders = {}) {
   const headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
     'Accept': 'application/json, text/javascript, */*; q=0.01',
     'X-Requested-With': 'XMLHttpRequest',
@@ -116,6 +116,71 @@ async function httpPost(url, bodyData, customHeaders = {}) {
   }
 
   return '';
+}
+
+/**
+ * Pure JavaScript Dean Edwards packer unpacker (safe, zero eval)
+ */
+function unpack(p, a, c, k, e, d) {
+  d = d || {};
+  e = function(val) {
+    return (val < a ? '' : e(parseInt(val / a, 10))) + ((val = val % a) > 35 ? String.fromCharCode(val + 29) : val.toString(36));
+  };
+  if (!''.replace(/^/, String)) {
+    while (c--) {
+      d[e(c)] = k[c] || e(c);
+    }
+    k = [function(elem) { return d[elem]; }];
+    e = function() { return '\\w+'; };
+    c = 1;
+  }
+  while (c--) {
+    if (k[c]) {
+      p = p.replace(new RegExp('\\b' + e(c) + '\\b', 'g'), k[c]);
+    }
+  }
+  return p;
+}
+
+function safeUnpack(html) {
+  if (!html || typeof html !== 'string') return null;
+  const match = html.match(/}\s*\(\s*['"]([\s\S]*?)['"]\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*['"]([\s\S]*?)['"]\.split\(['"]\|['"]\)/);
+  if (!match) return null;
+  try {
+    const p = match[1];
+    const a = parseInt(match[2], 10);
+    const c = parseInt(match[3], 10);
+    const k = match[4].split('|');
+    return unpack(p, a, c, k);
+  } catch (_) {
+    return null;
+  }
+}
+
+/**
+ * Extract FirePlayer 32-hex hash from player HTML
+ */
+function extractFirePlayerHash(html) {
+  if (!html || typeof html !== 'string') return null;
+
+  // 1. Direct match: FirePlayer("...")
+  let m = html.match(/FirePlayer\(["']([a-f0-9]{32})["']/i);
+  if (m) return m[1];
+
+  // 2. Token match in packed script: ...|([a-f0-9]{32})||FirePlayer|...
+  m = html.match(/([a-f0-9]{32})\|+FirePlayer/i) ||
+      html.match(/FirePlayer\|+([a-f0-9]{32})/i);
+  if (m) return m[1];
+
+  // 3. Safe unpack of Dean Edwards packed script
+  const unpacked = safeUnpack(html);
+  if (unpacked) {
+    m = unpacked.match(/FirePlayer\(["']([a-f0-9]{32})["']/i) ||
+        unpacked.match(/["']([a-f0-9]{32})["']/i);
+    if (m) return m[1];
+  }
+
+  return null;
 }
 
 /**
@@ -209,32 +274,69 @@ async function extractDetails(targetUrl) {
 }
 
 /**
- * Extract anime episodes
+ * Extract anime episodes with natural ordering and proper Season 1 / Specials grouping
  */
 async function extractEpisodes(animeUrl) {
   try {
     const html = await httpGet(animeUrl);
     const episodes = [];
-    const epRegex = /href="([^"]+-[0-9]+-bolum(?:-[^"]*)?)"/gi;
-    let m;
     const seen = new Set();
+    const rawItems = [];
 
-    while ((m = epRegex.exec(html)) !== null) {
-      const epUrl = makeAbsolute(m[1]);
-      if (seen.has(epUrl)) continue;
+    // Pattern A: Match elements with data-episode-title / data-episode-number
+    const aRegex = /<a[^>]+href="([^"]+)"[^>]*data-episode-title="([^"]+)"[^>]*>([\s\S]*?)<\/a>|<a[^>]+data-episode-title="([^"]+)"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+    let m;
+    while ((m = aRegex.exec(html)) !== null) {
+      const rawHref = m[1] || m[5];
+      const rawTitle = m[2] || m[4];
+      const epUrl = makeAbsolute(rawHref);
+      if (!epUrl || seen.has(epUrl)) continue;
       seen.add(epUrl);
-      const numMatch = epUrl.match(/-([0-9]+)-bolum/i);
-      const epNum = numMatch ? parseInt(numMatch[1], 10) : episodes.length + 1;
-      episodes.push({
-        id: epUrl,
-        title: `Bölüm ${epNum}`,
-        seasonNumber: 1,
-        episodeNumber: epNum,
-        season: 1,
-        episode: epNum,
-        url: epUrl,
-        href: epUrl
-      });
+      rawItems.push({ url: epUrl, title: cleanText(rawTitle) });
+    }
+
+    // Pattern B: Fallback if data-episode-title anchors are absent
+    if (rawItems.length === 0) {
+      const fallbackRegex = /<a[^>]+href="([^"]+-[0-9a-z]+-bolum(?:-[^"]*)?)"[^>]*>([\s\S]*?)<\/a>/gi;
+      while ((m = fallbackRegex.exec(html)) !== null) {
+        const epUrl = makeAbsolute(m[1]);
+        const text = cleanText(m[2]);
+        if (!epUrl || seen.has(epUrl) || epUrl.includes('ilk-bolum') || epUrl.includes('son-bolum')) continue;
+        seen.add(epUrl);
+        rawItems.push({ url: epUrl, title: text });
+      }
+    }
+
+    let regularCount = 0;
+    let specialCount = 0;
+
+    for (const item of rawItems) {
+      const isSpecial = /special|ova|film|sinema|movie/i.test(item.url) || /special|ova|film|movie/i.test(item.title);
+      if (isSpecial) {
+        specialCount++;
+        episodes.push({
+          id: item.url,
+          title: item.title || `Special ${specialCount}`,
+          seasonNumber: 0,
+          episodeNumber: specialCount,
+          season: 0,
+          episode: specialCount,
+          url: item.url,
+          href: item.url
+        });
+      } else {
+        regularCount++;
+        episodes.push({
+          id: item.url,
+          title: item.title || `Bölüm ${regularCount}`,
+          seasonNumber: 1,
+          episodeNumber: regularCount,
+          season: 1,
+          episode: regularCount,
+          url: item.url,
+          href: item.url
+        });
+      }
     }
 
     if (!episodes.length) {
@@ -250,7 +352,6 @@ async function extractEpisodes(animeUrl) {
       });
     }
 
-    episodes.sort((a, b) => a.episodeNumber - b.episodeNumber);
     return episodes;
   } catch (err) {
     return [{
@@ -268,26 +369,44 @@ async function extractEpisodes(animeUrl) {
 
 /**
  * Extract video stream
- * Resolves Aincrad (Reklamsız) high-speed HLS CDN alongside YourUpload and Mail.ru mirrors
+ * Resolves multiple fansub translators (Lawsonia, Adonis, AkatsukiSubs) and sources (Aincrad HLS, YourUpload MP4, SendVid MP4, Vidmoly HLS)
  */
 async function extractStreamUrl(episodeUrl) {
   try {
     const cleanUrl = String(episodeUrl || '').replace(/#.*$/, '');
     const html = await httpGet(cleanUrl);
 
-    // Find translator endpoints
-    const transEndpoints = [];
-    const m1 = [...html.matchAll(/\/bolum\/\d+\/cevirmen\/\d+/g)].map(x => makeAbsolute(x[0]));
-    for (const u of m1) {
-      if (!transEndpoints.includes(u)) transEndpoints.push(u);
+    // Discover all translators from the page
+    const transMap = new Map();
+    const btnRegex1 = /<button[^>]+data-sources="([^"]+)"[^>]*title="([^"]+)"[^>]*>([\s\S]*?)<\/button>/gi;
+    let bm;
+    while ((bm = btnRegex1.exec(html)) !== null) {
+      const srcUrl = bm[1];
+      const tName = cleanText(bm[2] || bm[3]);
+      transMap.set(srcUrl, tName);
+    }
+
+    const btnRegex2 = /<button[^>]+title="([^"]+)"[^>]*data-sources="([^"]+)"[^>]*>([\s\S]*?)<\/button>/gi;
+    while ((bm = btnRegex2.exec(html)) !== null) {
+      const tName = cleanText(bm[1]);
+      const srcUrl = bm[2];
+      if (!transMap.has(srcUrl)) transMap.set(srcUrl, tName);
+    }
+
+    const allEndpoints = [...html.matchAll(/\/bolum\/\d+\/cevirmen\/\d+/g)].map(x => x[0]);
+    for (const endp of allEndpoints) {
+      const fullUrl = makeAbsolute(endp);
+      if (!transMap.has(fullUrl)) {
+        transMap.set(fullUrl, 'Varsayılan');
+      }
     }
 
     const servers = [];
     let primaryStream = null;
 
-    for (const endp of transEndpoints) {
+    for (const [transUrl, transName] of transMap.entries()) {
       try {
-        const tText = await httpGet(endp, {
+        const tText = await httpGet(transUrl, {
           'Referer': cleanUrl,
           'X-Requested-With': 'XMLHttpRequest'
         });
@@ -298,18 +417,16 @@ async function extractStreamUrl(episodeUrl) {
         if (!data || !Array.isArray(data.videos)) continue;
 
         for (const targetVideo of data.videos) {
+          const vName = targetVideo.name || 'Video';
           const pUrl = `https://anizm.com.tr/player/${targetVideo.id}`;
 
-          // 1. Aincrad (Reklamsız) - Anizm's Native Ad-Free High-Speed CDN
-          if (/Aincrad/i.test(targetVideo.name)) {
+          // 1. Aincrad (Reklamsız) - Native Anizmplayer HLS CDN
+          if (/Aincrad/i.test(vName)) {
             try {
               const pHtml = await httpGet(pUrl, { 'Referer': cleanUrl });
-              const hashMatch = pHtml.match(/([a-f0-9]{32})\|FirePlayer/i) ||
-                                pHtml.match(/FirePlayer\|([a-f0-9]{32})/i) ||
-                                pHtml.match(/FirePlayer\(["']([a-f0-9]{32})["']/i);
+              const hash = extractFirePlayerHash(pHtml);
 
-              if (hashMatch) {
-                const hash = hashMatch[1];
+              if (hash) {
                 const postUrl = `https://anizmplayer.com/player/index.php?data=${hash}&do=getVideo`;
                 const gText = await httpPost(
                   postUrl,
@@ -340,7 +457,7 @@ async function extractStreamUrl(episodeUrl) {
                           qualities.push({
                             label: label,
                             url: qUrl,
-                            headers: { 'Referer': BASE_URL + '/' }
+                            headers: { 'Referer': 'https://anizmplayer.com/' }
                           });
                         }
                       }
@@ -350,14 +467,15 @@ async function extractStreamUrl(episodeUrl) {
                       qualities.push({
                         label: 'Auto (HLS)',
                         url: masterUrl,
-                        headers: { 'Referer': BASE_URL + '/' }
+                        headers: { 'Referer': 'https://anizmplayer.com/' }
                       });
                     }
 
                     const bestQuality = qualities[qualities.length - 1];
+                    const serverName = `Aincrad [${transName}]`;
                     servers.push({
-                      name: 'Aincrad (Reklamsız)',
-                      label: 'Aincrad · HLS (Gömülü Türkçe Altyazı)',
+                      name: serverName,
+                      label: `${serverName} · HLS`,
                       audioLanguage: 'ja',
                       audioLanguages: ['ja'],
                       qualities: qualities,
@@ -369,6 +487,7 @@ async function extractStreamUrl(episodeUrl) {
                         url: bestQuality.url,
                         streamType: 'hls',
                         quality: bestQuality.label,
+                        serverName: serverName,
                         headers: { 'Referer': 'https://anizmplayer.com/' }
                       };
                     }
@@ -379,7 +498,7 @@ async function extractStreamUrl(episodeUrl) {
           }
 
           // 2. YourUpload Mirror
-          if (/YourUpload/i.test(targetVideo.name)) {
+          if (/YourUpload/i.test(vName)) {
             try {
               const pHtml = await httpGet(pUrl, { 'Referer': cleanUrl });
               const yuIframe = pHtml.match(/yourupload\.com\/embed\/([a-zA-Z0-9]+)/i);
@@ -390,12 +509,13 @@ async function extractStreamUrl(episodeUrl) {
                               yuHtml.match(/property="og:video"[^>]+content="([^"]+)"/i);
                 if (yuMp4) {
                   const sUrl = yuMp4[1];
+                  const serverName = `YourUpload [${transName}]`;
                   servers.push({
-                    name: 'YourUpload',
-                    label: 'YourUpload · 1080p MP4',
+                    name: serverName,
+                    label: `${serverName} · 1080p MP4`,
                     audioLanguage: 'ja',
                     audioLanguages: ['ja'],
-                    qualities: [{ label: '1080p', url: sUrl, headers: { Referer: 'https://www.yourupload.com/' } }],
+                    qualities: [{ label: '1080p', url: sUrl, headers: { 'Referer': 'https://www.yourupload.com/' } }],
                     subtitles: []
                   });
                   if (!primaryStream) {
@@ -403,7 +523,8 @@ async function extractStreamUrl(episodeUrl) {
                       url: sUrl,
                       streamType: 'mp4',
                       quality: '1080p',
-                      headers: { Referer: 'https://www.yourupload.com/' }
+                      serverName: serverName,
+                      headers: { 'Referer': 'https://www.yourupload.com/' }
                     };
                   }
                 }
@@ -411,8 +532,74 @@ async function extractStreamUrl(episodeUrl) {
             } catch (_) {}
           }
 
-          // 3. Mail.ru Mirror
-          if (/Mail\.ru/i.test(targetVideo.name)) {
+          // 3. Vidmoly Mirror
+          if (/Vidmoly/i.test(vName)) {
+            try {
+              const pHtml = await httpGet(pUrl, { 'Referer': cleanUrl });
+              const vmIframe = pHtml.match(/vidmoly\.(?:to|me|net|biz)\/(?:embed-|w\/)?([a-zA-Z0-9]+)/i);
+              if (vmIframe) {
+                const vmUrl = `https://vidmoly.to/embed-${vmIframe[1]}.html`;
+                const vmHtml = await httpGet(vmUrl, { 'Referer': pUrl });
+                const vmM3u8 = vmHtml.match(/file:\s*["']([^"']+\.m3u8[^"']*)["']/i) ||
+                               vmHtml.match(/sources:\s*\[\s*\{\s*file:\s*["']([^"']+)["']/i);
+                if (vmM3u8) {
+                  const sUrl = vmM3u8[1];
+                  const serverName = `Vidmoly [${transName}]`;
+                  servers.push({
+                    name: serverName,
+                    label: `${serverName} · HLS`,
+                    audioLanguage: 'ja',
+                    audioLanguages: ['ja'],
+                    qualities: [{ label: '1080p', url: sUrl, headers: { 'Referer': 'https://vidmoly.to/' } }],
+                    subtitles: []
+                  });
+                  if (!primaryStream) {
+                    primaryStream = {
+                      url: sUrl,
+                      streamType: 'hls',
+                      quality: '1080p',
+                      serverName: serverName,
+                      headers: { 'Referer': 'https://vidmoly.to/' }
+                    };
+                  }
+                }
+              }
+            } catch (_) {}
+          }
+
+          // 4. SendVid Mirror
+          if (/SendVid/i.test(vName)) {
+            try {
+              const pHtml = await httpGet(pUrl, { 'Referer': cleanUrl });
+              const svMatch = pHtml.match(/var\s+video_source\s*=\s*["']([^"']+)["']/i) ||
+                              pHtml.match(/video_source\s*=\s*["']([^"']+)["']/i) ||
+                              pHtml.match(/<source[^>]+src=["']([^"']+\.mp4[^"']*)["']/i);
+              if (svMatch) {
+                const sUrl = svMatch[1];
+                const serverName = `SendVid [${transName}]`;
+                servers.push({
+                  name: serverName,
+                  label: `${serverName} · 720p MP4`,
+                  audioLanguage: 'ja',
+                  audioLanguages: ['ja'],
+                  qualities: [{ label: '720p', url: sUrl, headers: { 'Referer': 'https://sendvid.com/' } }],
+                  subtitles: []
+                });
+                if (!primaryStream) {
+                  primaryStream = {
+                    url: sUrl,
+                    streamType: 'mp4',
+                    quality: '720p',
+                    serverName: serverName,
+                    headers: { 'Referer': 'https://sendvid.com/' }
+                  };
+                }
+              }
+            } catch (_) {}
+          }
+
+          // 5. Mail.ru Mirror
+          if (/Mail\.ru/i.test(vName)) {
             try {
               const pHtml = await httpGet(pUrl, { 'Referer': cleanUrl });
               const mailRuMeta = pHtml.match(/"metadataUrl":\s*"([^"]+)"/i);
@@ -420,26 +607,30 @@ async function extractStreamUrl(episodeUrl) {
                 const metaUrl = makeAbsolute(mailRuMeta[1]);
                 const mText = await httpGet(metaUrl, { 'Referer': pUrl });
                 const mData = JSON.parse(mText);
-                if (mData && mData.videos && mData.videos.length) {
-                  const best = mData.videos[mData.videos.length - 1];
-                  if (best && best.url) {
-                    const sUrl = makeAbsolute(best.url);
-                    servers.push({
-                      name: 'Mail.ru',
-                      label: 'Mail.ru · 1080p MP4',
-                      audioLanguage: 'ja',
-                      audioLanguages: ['ja'],
-                      qualities: [{ label: '1080p', url: sUrl, headers: { Referer: 'https://my.mail.ru/' } }],
-                      subtitles: []
-                    });
-                    if (!primaryStream) {
-                      primaryStream = {
-                        url: sUrl,
-                        streamType: 'mp4',
-                        quality: '1080p',
-                        headers: { Referer: 'https://my.mail.ru/' }
-                      };
-                    }
+                if (mData && Array.isArray(mData.videos) && mData.videos.length > 0) {
+                  const qualities = mData.videos.map(v => ({
+                    label: v.key || '720p',
+                    url: makeAbsolute(v.url),
+                    headers: { 'Referer': 'https://my.mail.ru/' }
+                  }));
+                  const best = qualities[qualities.length - 1];
+                  const serverName = `Mail.ru [${transName}]`;
+                  servers.push({
+                    name: serverName,
+                    label: `${serverName} · MP4`,
+                    audioLanguage: 'ja',
+                    audioLanguages: ['ja'],
+                    qualities: qualities,
+                    subtitles: []
+                  });
+                  if (!primaryStream) {
+                    primaryStream = {
+                      url: best.url,
+                      streamType: 'mp4',
+                      quality: best.label,
+                      serverName: serverName,
+                      headers: { 'Referer': 'https://my.mail.ru/' }
+                    };
                   }
                 }
               }
