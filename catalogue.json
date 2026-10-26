@@ -108,14 +108,14 @@
       "moduleIdentity": "SP-VID-997-DZCI",
       "moduleIdentityNumber": 997,
       "contentType": "video",
-      "version": "1.0.1",
-      "moduleVersion": "1.0.1",
+      "version": "1.0.2",
+      "moduleVersion": "1.0.2",
       "releaseTrack": "stable",
       "file": "modules/dizci-source-v1.zip",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizci-source-v1.zip",
-      "sha256": "3371e1446620bd01235e00d9a181f071348344c75981d19e164d90fe0e632ba4",
-      "publishedAt": "2026-10-26T12:07:44.458Z",
-      "publishedAtMs": 1793016464460,
+      "sha256": "8354dd3869d95711a10077f7bb3108bb9cd6fe6f1a0c9858dcf09b02dbb547dc",
+      "publishedAt": "2026-10-26T16:18:43.442Z",
+      "publishedAtMs": 1793031523444,
       "presentation": {
         "category": "Movies & TV",
         "purpose": "Western Movies & Series with Dedicated English Audio (Altyazılı) and Turkish Dub Streams",
@@ -128,6 +128,7 @@
         "iconUrl": "https://www.google.com/s2/favicons?domain=dizci.net&sz=128"
       },
       "changelog": [
+        "1.0.2: Add VK (VKontakte) 1080p video resolver supporting okcdn.ru direct streams, and parse authentic episode titles with accurate sub/dub language badges from episode cards.",
         "1.0.1: Prioritize direct progressive MP4 streams for Dzen and OK.ru to prevent iOS AVPlayer HTTP 502/400 errors, parse structured Next.js versions state, and add multi-provider fallback.",
         "1.0.0: Dedicated Dizci module with separate Sub (English original audio) and Dub (Turkish) streams."
       ]
@@ -288,9 +289,9 @@
       "releaseTrack": "stable",
       "file": "modules/anizm-source-v1.zip",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/anizm-source-v1.zip",
-      "sha256": "83c8dcc495dff4569f977d82bc0fb378eb6f362d34ca8d82a45562eb35e80ee2",
-      "publishedAt": "2026-10-26T14:42:19.602Z",
-      "publishedAtMs": 1793025739603,
+      "sha256": "2af3d964c37e1c0e290db2df1933cc836dba61b1e6f39bdd0a03aec1ad532fc3",
+      "publishedAt": "2026-10-26T16:18:43.442Z",
+      "publishedAtMs": 1793031523444,
       "presentation": {
         "category": "Anime",
         "purpose": "Turkish Anime with Multi-Translator & Multi-Source Playback (Aincrad Master HLS, YourUpload, SendVid, Vidmoly)",

@@ -18,7 +18,7 @@ function cleanText(text) {
     .replace(/<[^>]+>/g, '')
     .replace(/&amp;/g, '&')
     .replace(/&quot;/g, '"')
-    .replace(/&#039;|&#39;|&apos;|&#8217;/g, "'")
+    .replace(/&#039;|&#39;|&apos;|&#8217;|&#x27;/gi, "'")
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&nbsp;/g, ' ')
@@ -275,28 +275,75 @@ async function extractEpisodes(seriesUrl) {
 
     // Helper to parse episodes from HTML
     function parseEps(pageHtml, sNum) {
-      const epRegex = /href=["'](\/dizi\/[^"']+\/sezon\/(\d+)\/bolum\/(\d+)\/?)["']/gi;
-      let em;
-      while ((em = epRegex.exec(pageHtml)) !== null) {
-        const epHref = makeAbsolute(em[1]);
+      const cardRegex = /<article[^>]*class="[^"]*episode-card[^"]*"[^>]*>([\s\S]*?)<\/article>/gi;
+      let cm;
+      let cardCount = 0;
+      while ((cm = cardRegex.exec(pageHtml)) !== null) {
+        const cardHtml = cm[1];
+        const linkMatch = cardHtml.match(/href=["'](\/dizi\/[^"']+\/sezon\/(\d+)\/bolum\/(\d+)\/?)["']/i);
+        if (!linkMatch) continue;
+        const epHref = makeAbsolute(linkMatch[1]);
         if (seenEps.has(epHref)) continue;
         seenEps.add(epHref);
+        cardCount++;
 
-        const currentSeason = parseInt(em[2], 10) || sNum;
-        const currentEp = parseInt(em[3], 10) || 1;
+        const currentSeason = parseInt(linkMatch[2], 10) || sNum;
+        const currentEp = parseInt(linkMatch[3], 10) || 1;
+
+        // Extract real episode title from episode-copy
+        const copyMatch = cardHtml.match(/class="episode-copy"[^>]*>[\s\S]*?<strong>([\s\S]*?)<\/strong>/i);
+        let epTitle = copyMatch ? cleanText(copyMatch[1]) : '';
+        if (!epTitle || epTitle === `B${currentEp}` || epTitle.toLowerCase() === `bölüm ${currentEp}`) {
+          epTitle = `${currentSeason}. Sezon ${currentEp}. Bölüm`;
+        }
+
+        // Language availability from badge
+        const langMatch = cardHtml.match(/class="episode-language"[^>]*>([\s\S]*?)<\/span>/i);
+        const langText = langMatch ? langMatch[1].trim().toLowerCase() : '';
+        const isDub = langText.includes('dub');
+        const isSub = langText.includes('alt') || langText.includes('sub');
+        const subAvail = isSub || !isDub;
+        const dubAvail = isDub || !isSub;
 
         allEpisodes.push({
           id: epHref,
-          title: `${currentSeason}. Sezon ${currentEp}. Bölüm`,
+          title: epTitle,
           seasonNumber: currentSeason,
           episodeNumber: currentEp,
           season: currentSeason,
           episode: currentEp,
           url: epHref,
           href: epHref,
-          subAvailable: true,
-          dubAvailable: true
+          subAvailable: subAvail,
+          dubAvailable: dubAvail
         });
+      }
+
+      // Regex fallback if no article cards found
+      if (cardCount === 0) {
+        const epRegex = /href=["'](\/dizi\/[^"']+\/sezon\/(\d+)\/bolum\/(\d+)\/?)["']/gi;
+        let em;
+        while ((em = epRegex.exec(pageHtml)) !== null) {
+          const epHref = makeAbsolute(em[1]);
+          if (seenEps.has(epHref)) continue;
+          seenEps.add(epHref);
+
+          const currentSeason = parseInt(em[2], 10) || sNum;
+          const currentEp = parseInt(em[3], 10) || 1;
+
+          allEpisodes.push({
+            id: epHref,
+            title: `${currentSeason}. Sezon ${currentEp}. Bölüm`,
+            seasonNumber: currentSeason,
+            episodeNumber: currentEp,
+            season: currentSeason,
+            episode: currentEp,
+            url: epHref,
+            href: epHref,
+            subAvailable: true,
+            dubAvailable: true
+          });
+        }
       }
     }
 
@@ -552,6 +599,108 @@ async function resolveOkRu(embedUrl) {
 }
 
 /**
+ * VK (VKontakte) Video Stream Resolver
+ * Extracts direct high-speed MP4 video streams and HLS playlists from okcdn.ru
+ */
+async function resolveVk(embedUrl) {
+  try {
+    let cleanUrl = embedUrl;
+    if (cleanUrl.startsWith('//')) cleanUrl = 'https:' + cleanUrl;
+    const chromeUa = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    const html = await httpGet(cleanUrl, {
+      'User-Agent': chromeUa,
+      'Referer': 'https://dizci.net/'
+    });
+    if (!html) return null;
+
+    let files = null;
+    const idx = html.indexOf('"files":{');
+    if (idx !== -1) {
+      const endIdx = html.indexOf('}', idx + 9);
+      if (endIdx !== -1) {
+        try {
+          const filesJson = html.slice(idx + 8, endIdx + 1).replace(/\\\//g, '/');
+          files = JSON.parse(filesJson);
+        } catch (_) {}
+      }
+    }
+
+    if (!files) {
+      const match = html.match(/"files"\s*:\s*(\{[^}]+\})/);
+      if (match) {
+        try {
+          files = JSON.parse(match[1].replace(/\\\//g, '/'));
+        } catch (_) {}
+      }
+    }
+
+    if (!files || Object.keys(files).length === 0) return null;
+
+    const qualityMap = [
+      { key: 'mp4_1080', label: '1080p', type: 'mp4' },
+      { key: 'mp4_720', label: '720p', type: 'mp4' },
+      { key: 'mp4_480', label: '480p', type: 'mp4' },
+      { key: 'mp4_360', label: '360p', type: 'mp4' },
+      { key: 'hls', label: 'Auto (HLS)', type: 'hls' }
+    ];
+
+    const streams = [];
+    let chosenUrl = '';
+    let chosenQuality = '1080p';
+    let chosenType = 'mp4';
+
+    for (const q of qualityMap) {
+      if (files[q.key]) {
+        const streamUrl = String(files[q.key]).replace(/\\\//g, '/');
+        if (!chosenUrl) {
+          chosenUrl = streamUrl;
+          chosenQuality = q.label;
+          chosenType = q.type;
+        }
+        streams.push(`${q.label} ${q.type.toUpperCase()}`, streamUrl);
+      }
+    }
+
+    if (!chosenUrl && files.hls) {
+      chosenUrl = String(files.hls).replace(/\\\//g, '/');
+      chosenQuality = 'Auto';
+      chosenType = 'hls';
+      streams.push('Auto HLS', chosenUrl);
+    }
+
+    if (!chosenUrl) return null;
+
+    const vkHeaders = {
+      'User-Agent': chromeUa,
+      'Referer': 'https://vk.com/'
+    };
+
+    return {
+      url: chosenUrl,
+      streamUrl: chosenUrl,
+      streamType: chosenType,
+      format: chosenType,
+      quality: chosenQuality,
+      serverName: 'VK',
+      headers: vkHeaders,
+      streams: streams,
+      servers: [
+        {
+          name: 'Dizci VK',
+          label: `VK ${chosenQuality}`,
+          url: chosenUrl,
+          streamType: chosenType,
+          quality: chosenQuality,
+          headers: vkHeaders
+        }
+      ]
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+/**
  * Extract video stream handler with strict sub vs dub separation
  */
 async function extractStreamUrl(episode, lang) {
@@ -631,6 +780,8 @@ async function extractStreamUrl(episode, lang) {
           stream = await resolveVidMoly(embedUrl);
         } else if (provider.includes('ok') || embedUrl.includes('ok.ru') || embedUrl.includes('odnoklassniki')) {
           stream = await resolveOkRu(embedUrl);
+        } else if (provider.includes('vk') || embedUrl.includes('vk.com')) {
+          stream = await resolveVk(embedUrl);
         }
 
         if (stream && stream.url) {
@@ -695,6 +846,25 @@ async function extractStreamUrl(episode, lang) {
     const dzenId = findEmbed(want, 'dzen') || findEmbed(altLang, 'dzen');
     if (dzenId) {
       const stream = await resolveDzen(`https://dzen.ru/embed/${dzenId}`);
+      if (stream && stream.url) {
+        return {
+          url: stream.url,
+          streamUrl: stream.streamUrl || stream.url,
+          streamType: stream.streamType,
+          format: stream.format,
+          quality: stream.quality,
+          headers: stream.headers,
+          streams: stream.streams,
+          servers: stream.servers,
+          subtitles: []
+        };
+      }
+    }
+
+    const vkMatch = html.match(/https?:\\?\/\\?\/vk\.com\\?\/video_ext\.php\?[^"'\s]+/i);
+    if (vkMatch) {
+      const cleanVk = vkMatch[0].replace(/\\/g, '').replace(/&amp;/g, '&');
+      const stream = await resolveVk(cleanVk);
       if (stream && stream.url) {
         return {
           url: stream.url,
