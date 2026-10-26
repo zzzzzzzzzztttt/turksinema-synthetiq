@@ -3,7 +3,7 @@
   "repositoryId": "turksinema-synthetiq",
   "name": "TurkSinema Synthetiq Repository",
   "enabled": true,
-  "publishedAtMs": 1793021743019,
+  "publishedAtMs": 1793023757817,
   "bundle": {
     "version": 18,
     "minAppVersion": "8.0.0",
@@ -277,14 +277,15 @@
       "moduleIdentity": "SP-VID-994-ANZM",
       "moduleIdentityNumber": 994,
       "contentType": "video",
-      "version": "1.0.2",
-      "moduleVersion": "1.0.2",
+      "version": "1.0.3",
+      "moduleVersion": "1.0.3",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/anizm-source-v1.zip",
       "packagePath": "/modules/anizm-source-v1.zip",
-      "sha256": "af008255146ab11e7fceb0828cca01c2ea9413f5400b6ee7df7a6d9d90a46d2f",
-      "publishedAtMs": 1793021743019,
+      "sha256": "50f3cfc004c48476cf6dd9e938490f8e89e847a3216a386c4bb9d434be9d1a00",
+      "publishedAtMs": 1793023757817,
       "changelog": [
+        "1.0.3: Clean episode title extraction isolating v3-anime-episode-grid and strong tags, eliminating messy concatenated catalog text and header action buttons.",
         "1.0.2: Fix audio loss on demuxed HLS streams by binding master HLS playlist with full audio track synchronization, and populate direct playable URLs on all resolved servers in the Server Tab.",
         "1.0.1: Multi-translator and multi-source resolution (Aincrad HLS, YourUpload MP4, SendVid MP4, Vidmoly HLS), safe Dean Edwards unpacker, and structured Season/Special episode indexing.",
         "1.0.0: Dedicated Anizm module with hardcoded Turkish fansub subtitles burned into direct 1080p MP4 frames."
@@ -303,5 +304,5 @@
     }
   ],
   "version": "1.0.0",
-  "updatedAt": "2026-10-26T13:35:43.017Z"
+  "updatedAt": "2026-10-26T14:09:17.816Z"
 }

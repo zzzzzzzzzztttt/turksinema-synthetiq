@@ -283,35 +283,61 @@ async function extractEpisodes(animeUrl) {
     const seen = new Set();
     const rawItems = [];
 
-    // Pattern A: Match elements with data-episode-title / data-episode-number
-    const aRegex = /<a[^>]+href="([^"]+)"[^>]*data-episode-title="([^"]+)"[^>]*>([\s\S]*?)<\/a>|<a[^>]+data-episode-title="([^"]+)"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+    // Isolate episode grid container if available to avoid header action buttons ("İlk/Son bölümü izle")
+    let searchHtml = html;
+    const gridMatch = html.match(/<div[^>]+class="[^"]*v3-anime-episode-grid[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+    if (gridMatch) {
+      searchHtml = gridMatch[1];
+    }
+
+    const aRegex = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
     let m;
-    while ((m = aRegex.exec(html)) !== null) {
-      const rawHref = m[1] || m[5];
-      const rawTitle = m[2] || m[4];
+    while ((m = aRegex.exec(searchHtml)) !== null) {
+      const rawHref = m[1];
+      const innerHtml = m[2];
+      const fullTag = m[0];
+
+      // Exclude header action buttons
+      if (fullTag.includes('v3-anime-detail-action') || innerHtml.includes('İlk bölümü izle') || innerHtml.includes('Son bölümü izle')) {
+        continue;
+      }
+
+      // Must be a bolum link
+      if (!/bolum/i.test(rawHref)) {
+        continue;
+      }
+
       const epUrl = makeAbsolute(rawHref);
       if (!epUrl || seen.has(epUrl)) continue;
       seen.add(epUrl);
-      rawItems.push({ url: epUrl, title: cleanText(rawTitle) });
-    }
 
-    // Pattern B: Fallback if data-episode-title anchors are absent
-    if (rawItems.length === 0) {
-      const fallbackRegex = /<a[^>]+href="([^"]+-[0-9a-z]+-bolum(?:-[^"]*)?)"[^>]*>([\s\S]*?)<\/a>/gi;
-      while ((m = fallbackRegex.exec(html)) !== null) {
-        const epUrl = makeAbsolute(m[1]);
-        const text = cleanText(m[2]);
-        if (!epUrl || seen.has(epUrl) || epUrl.includes('ilk-bolum') || epUrl.includes('son-bolum')) continue;
-        seen.add(epUrl);
-        rawItems.push({ url: epUrl, title: text });
+      // 1. Check data-episode-title
+      const dataTitleMatch = fullTag.match(/data-episode-title="([^"]+)"/i);
+      let title = dataTitleMatch ? cleanText(dataTitleMatch[1]) : '';
+
+      // 2. Check <strong>...</strong> inside anchor for clean episode name
+      if (!title) {
+        const strongMatch = innerHtml.match(/<strong[^>]*>([\s\S]*?)<\/strong>/i);
+        if (strongMatch) {
+          title = cleanText(strongMatch[1]);
+        }
       }
+
+      // 3. Fallback to clean url
+      if (!title) {
+        const numMatch = epUrl.match(/-([0-9]+[a-z]?)-bolum/i);
+        title = numMatch ? `${numMatch[1].toUpperCase()}. Bölüm` : 'Bölüm';
+      }
+
+      rawItems.push({ url: epUrl, title: title });
     }
 
     let regularCount = 0;
     let specialCount = 0;
 
     for (const item of rawItems) {
-      const isSpecial = /special|ova|film|sinema|movie/i.test(item.url) || /special|ova|film|movie/i.test(item.title);
+      const isSpecial = /special|ova|film|sinema|movie|ön gösterim|on-gosterim/i.test(item.url) ||
+                        /special|ova|film|movie|ön gösterim/i.test(item.title);
       if (isSpecial) {
         specialCount++;
         episodes.push({
