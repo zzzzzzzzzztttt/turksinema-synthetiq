@@ -7,11 +7,18 @@
  *   - Dedicated Subtitled (Original Audio + Turkish CC) via Rapid a2 variant stream
  *   - Dedicated Dubbed (Turkish Audio) via Rapid a1 variant and CloseLoad streams
  *   - Native Audio & Subtitles switcher integration for Synthetiq Player
+ *   - Safe pure-JS deobfuscation (Zero eval, Zero new Function, Zero new URL)
  *   - Inlined WebVTT subtitles to prevent iOS AVPlayer 403 blocks
- *   - Pure JavaScript unpacking & deobfuscation (Dean Edwards unpacker + hostname cipher)
+ *   - High-res Metahub posters via IMDb ID detection
  */
 
 const BASE_URL = 'https://filmmakinesi.to';
+
+function getHostname(url) {
+  if (!url) return '';
+  const m = String(url).match(/^https?:\/\/([^\/:]+)/i);
+  return m ? m[1] : '';
+}
 
 function makeAbsolute(path, base = BASE_URL) {
   if (!path) return '';
@@ -40,6 +47,164 @@ function cleanText(text) {
     .replace(/&gt;/g, '>')
     .replace(/&nbsp;/g, ' ')
     .trim();
+}
+
+function safeAtob(str) {
+  if (typeof atob === 'function') {
+    try { return atob(str); } catch (_) {}
+  }
+  const b64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+  let out = '';
+  str = String(str).replace(/[\t\n\f\r ]+/g, '');
+  let bits = 0, buffer = 0;
+  for (let i = 0; i < str.length; i++) {
+    const idx = b64.indexOf(str.charAt(i));
+    if (idx === -1) continue;
+    if (idx === 64) break;
+    buffer = (buffer << 6) | idx;
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      out += String.fromCharCode((buffer >>> bits) & 0xff);
+    }
+  }
+  return out;
+}
+
+/**
+ * Pure JavaScript Dean Edwards unpacker (safe, zero eval)
+ */
+function unpackDeanEdwards(p, a, c, k) {
+  const d = {};
+  const e = function(val) {
+    return (val < a ? '' : e(parseInt(val / a, 10))) + ((val = val % a) > 35 ? String.fromCharCode(val + 29) : val.toString(36));
+  };
+  while (c--) {
+    d[e(c)] = k[c] || e(c);
+  }
+  return p.replace(/\b\w+\b/g, (elem) => d[elem] || elem);
+}
+
+function safeUnpackAll(html) {
+  if (!html || typeof html !== 'string') return '';
+  let out = html;
+  const regex = /eval\s*\(\s*function\(p,a,c,k,e,d\)[\s\S]*?return\s+p\s*\}\s*\(\s*['"]([\s\S]*?)['"]\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*['"]([\s\S]*?)['"]\.split\(['"]\|['"]\)/g;
+  let match;
+  while ((match = regex.exec(html)) !== null) {
+    try {
+      const p = match[1];
+      const a = parseInt(match[2], 10);
+      const c = parseInt(match[3], 10);
+      const k = match[4].split('|');
+      const unpacked = unpackDeanEdwards(p, a, c, k);
+      out = out.replace(match[0], unpacked);
+    } catch (_) {}
+  }
+  return out;
+}
+
+/**
+ * Pure JS FilmMakinesi Embed Decipher (Zero eval, Zero new Function)
+ */
+function decipherFilmMakinesi(parts, hostname) {
+  if (!Array.isArray(parts) || parts.length < 3) return '';
+  const arr = [...parts];
+  const len = arr.length - 2;
+  const splitIdx1 = len % 7;
+  const splitIdx2 = 8 + (len % 5);
+
+  const r49 = arr.splice(splitIdx2, 1)[0] || '';
+  const n49nn = (arr.splice(splitIdx1, 1)[0] || '') + hostname;
+  let text = arr.join('');
+
+  if (n49nn.length > 4096) {
+    text = safeAtob(text);
+  }
+
+  let eb07 = 0;
+  let nuk3 = 0;
+  for (let i = 0; i < n49nn.length; i++) {
+    const c = n49nn.charCodeAt(i);
+    eb07 = (eb07 * 37 + c) % 241;
+    nuk3 = (nuk3 + ((c << 1) ^ i)) & 255;
+  }
+
+  const n5u3 = (eb07 * 3 + nuk3) % 256;
+  const z0a = (nuk3 % 11) + 5;
+  let x6c1f = ((nuk3 * 251 + eb07) % 65519) + 1;
+
+  for (let i = r49.length - 1; i >= 0; i--) {
+    const c = r49.charAt(i);
+    if (c === '7') {
+      text = safeAtob(text);
+    } else if (c === '3') {
+      text = text.split('').reverse().join('');
+    } else {
+      const shift = (26 - ((c.charCodeAt(0) - 96) % 26)) % 26;
+      text = text.replace(/[a-zA-Z]/g, (ch) => {
+        const code = ch.charCodeAt(0);
+        const base = (code <= 90) ? 65 : 97;
+        return String.fromCharCode((code - base + shift) % 26 + base);
+      });
+    }
+  }
+
+  if (r49.length > 2048) {
+    text = text.split('').reverse().join('');
+  }
+
+  const tLen = text.length;
+  const shuffleIndices = [];
+  for (let i = tLen - 1; i >= 1; i--) {
+    x6c1f = (x6c1f * 97 + 41) % 65519;
+    shuffleIndices[i] = x6c1f % (i + 1);
+  }
+
+  const chars = text.split('');
+  for (let i = 1; i < tLen; i++) {
+    const target = shuffleIndices[i];
+    const temp = chars[i];
+    chars[i] = chars[target];
+    chars[target] = temp;
+  }
+  text = chars.join('');
+
+  let lv4 = n5u3;
+  let result = '';
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    lv4 = (lv4 * 5 + z0a) % 256;
+    result += String.fromCharCode(code ^ lv4);
+    lv4 = (lv4 + code) % 256;
+  }
+
+  return result;
+}
+
+function decodeEmbedStream(html, hostname) {
+  const fullHtml = safeUnpackAll(html);
+  const clean = fullHtml.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  const jwMatch = clean.match(/sources\s*:\s*\[\s*\{\s*file\s*:\s*([a-zA-Z0-9_$]+)/);
+  if (jwMatch) {
+    const targetVar = jwMatch[1];
+    const assignRegex = new RegExp('(?:var|let|const)?\\s*' + targetVar + '\\s*=\\s*[a-zA-Z0-9_$]+\\s*\\(\\s*["\']([^"\']+)["\']\\s*\\.\\s*split\\s*\\(\\s*["\']([^"\']+)["\']\\s*\\)\\s*\\)');
+    const m = clean.match(assignRegex);
+    if (m) {
+      const parts = m[1].split(m[2]);
+      const decoded = decipherFilmMakinesi(parts, hostname);
+      if (decoded && decoded.startsWith('http')) return decoded;
+    }
+  }
+
+  const allMatches = [...clean.matchAll(/["']([^"']{80,})["']\s*\.\s*split\s*\(\s*["']([^"']+)["']\s*\)/g)];
+  for (const am of allMatches) {
+    const parts = am[1].split(am[2]);
+    const decoded = decipherFilmMakinesi(parts, hostname);
+    if (decoded && decoded.startsWith('http')) return decoded;
+  }
+
+  return null;
 }
 
 /**
@@ -84,123 +249,6 @@ async function httpGet(url, customHeaders = {}) {
 }
 
 /**
- * Dean Edwards JS unpacker implementation for packed scripts
- */
-function unpackDeanEdwards(script) {
-  let out = '';
-  let cur = 0;
-  while (cur < script.length) {
-    const idx = script.indexOf('eval(function(p,a,c,k,e,d)', cur);
-    if (idx === -1) {
-      out += script.slice(cur);
-      break;
-    }
-    out += script.slice(cur, idx);
-    let depth = 0;
-    let end = -1;
-    for (let i = idx + 4; i < script.length; i++) {
-      if (script[i] === '(') depth++;
-      else if (script[i] === ')') {
-        depth--;
-        if (depth === 0) {
-          end = i;
-          break;
-        }
-      }
-    }
-    if (end !== -1) {
-      const code = script.slice(idx + 5, end);
-      try {
-        const fn = new Function('return (' + code + ')');
-        out += fn();
-      } catch (_) {
-        out += script.slice(idx, end + 1);
-      }
-      cur = end + 1;
-    } else {
-      out += script.slice(idx);
-      break;
-    }
-  }
-  return out;
-}
-
-/**
- * Generic deobfuscator for FilmMakinesi internal embeds (CloseLoad & Rapid)
- */
-function decodeEmbedStream(html, hostname) {
-  const cleanHtml = html.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
-  const jwMatch = cleanHtml.match(/sources\s*:\s*\[\s*\{\s*file\s*:\s*([a-zA-Z0-9_$]+)/);
-  const targetVar = jwMatch ? jwMatch[1] : null;
-
-  const scripts = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)].map(m => m[1]);
-  const processedScripts = scripts.map(s => {
-    if (s.includes('eval(function(p,a,c,k,e,d)')) {
-      return unpackDeanEdwards(s);
-    }
-    return s;
-  });
-
-  // Strategy 1: If targetVar is identified, locate its definition and execute
-  if (targetVar) {
-    for (const s of processedScripts) {
-      if (s.includes(targetVar + ' =') || s.includes(targetVar + '=')) {
-        try {
-          const runner = new Function('hostname', `
-            const noop = function() { return {}; };
-            const self = { location: { hostname: hostname } };
-            const document = { location: { hostname: hostname }, addEventListener: noop, querySelector: noop };
-            const window = { location: { hostname: hostname }, addEventListener: noop, localStorage: { getItem: noop, setItem: noop } };
-            const localStorage = { getItem: noop, setItem: noop };
-            ${s}
-            return ${targetVar};
-          `);
-          const res = runner(hostname);
-          if (res && typeof res === 'string' && res.startsWith('http')) {
-            return res;
-          }
-        } catch (_) {}
-      }
-    }
-  }
-
-  // Strategy 2: Search for decoder pattern: var <varName> = <funcName>("...".split("..."));
-  for (const s of processedScripts) {
-    const match = s.match(/(var\s+([a-zA-Z0-9_$]+)\s*=\s*([a-zA-Z0-9_$]+)\s*\(\s*["'][^"']+["']\.split\([^)]+\)\s*\)\s*;)/);
-    if (match) {
-      const varName = match[2];
-      const funcName = match[3];
-      const funcIdx = s.lastIndexOf('var ' + funcName + '=', match.index);
-      if (funcIdx !== -1) {
-        const funcDef = s.slice(funcIdx, match.index);
-        try {
-          const runner = new Function('hostname', `
-            const self = { location: { hostname: hostname } };
-            const document = { location: { hostname: hostname } };
-            const window = { location: { hostname: hostname } };
-            ${funcDef}
-            ${match[1]}
-            return ${varName};
-          `);
-          const res = runner(hostname);
-          if (res && typeof res === 'string' && res.startsWith('http')) {
-            return res;
-          }
-        } catch (_) {}
-      }
-    }
-  }
-
-  // Strategy 3: Direct HLS or MP4 regex match fallback
-  const directMatch = html.match(/(https?:\/\/[^\s"'<>]+\.(?:m3u8|txt)[^\s"'<>]*)/i);
-  if (directMatch) {
-    return directMatch[1];
-  }
-
-  return null;
-}
-
-/**
  * Parse movie/series cards from HTML
  */
 function parseCards(html) {
@@ -215,10 +263,10 @@ function parseCards(html) {
     const attrs = match[2];
     const innerHtml = match[3];
 
-    const itemUrl = makeAbsolute(rawHref, BASE_URL);
+    const cleanHref = rawHref.replace(/#.*$/, '');
+    const itemUrl = makeAbsolute(cleanHref, BASE_URL);
     if (!itemUrl || seenUrls.has(itemUrl)) continue;
 
-    // Skip utility and category pages
     if (
       itemUrl.includes('/kategori/') ||
       itemUrl.includes('/tur/') ||
@@ -230,7 +278,6 @@ function parseCards(html) {
 
     seenUrls.add(itemUrl);
 
-    // Parse title from data-title, img alt, or inner text
     const titleMatch = attrs.match(/data-title="([^"]+)"/i) || innerHtml.match(/alt="([^"]+)"/i);
     let title = cleanText(titleMatch ? titleMatch[1] : '');
     if (!title) {
@@ -238,16 +285,12 @@ function parseCards(html) {
       title = slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     }
 
-    // Parse image
     const imgMatch = innerHtml.match(/<img[^>]+(?:data-src|src)="([^"]+)"/i);
-    const poster = imgMatch ? makeAbsolute(imgMatch[1], BASE_URL) : '';
+    const rawPoster = imgMatch ? makeAbsolute(imgMatch[1], BASE_URL) : '';
 
-    // Check Sub & Dub availability
     const isDual = /dual/i.test(innerHtml) || /dual/i.test(attrs);
     const isDub = /dublaj/i.test(innerHtml) || /dublaj/i.test(title);
-    const isSub = /altyaz/i.test(innerHtml) || /altyaz/i.test(title) || isDual;
 
-    // Duration & rating
     const durationMatch = attrs.match(/data-duration="([^"]+)"/i);
     const duration = durationMatch ? parseInt(durationMatch[1], 10) : null;
     const scoreMatch = attrs.match(/data-score="([^"]+)"/i);
@@ -258,9 +301,9 @@ function parseCards(html) {
       title: title,
       href: itemUrl,
       url: itemUrl,
-      image: poster,
-      poster: poster,
-      coverUrl: poster,
+      image: rawPoster,
+      poster: rawPoster,
+      coverUrl: rawPoster,
       rating: rating,
       duration: duration,
       subAvailable: true,
@@ -284,7 +327,6 @@ async function searchResults(query) {
     const html = await httpGet(searchUrl, { Referer: BASE_URL + '/' });
     const results = parseCards(html);
 
-    // Sort exact matches to the top
     const qLower = q.toLowerCase();
     results.sort((a, b) => {
       const aExact = a.title.toLowerCase() === qLower ? 2 : (a.title.toLowerCase().includes(qLower) ? 1 : 0);
@@ -356,22 +398,33 @@ async function discoveryFeed(page = 1) {
  */
 async function extractDetails(targetUrl) {
   try {
-    const html = await httpGet(targetUrl, { Referer: BASE_URL + '/' });
+    const cleanUrl = String(targetUrl || '').replace(/#.*$/, '');
+    const html = await httpGet(cleanUrl, { Referer: BASE_URL + '/' });
 
     // Title
     const titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || html.match(/<meta property="og:title" content="([^"]+)"/i);
     let title = cleanText(titleMatch ? titleMatch[1] : '');
     title = title.replace(/\s+(?:izle|Full HD izle)$/i, '').trim();
 
-    // Description
-    const descMatch = html.match(/<div class="description">([\s\S]*?)<\/div>/i) ||
-                      html.match(/<meta property="og:description" content="([^"]+)"/i);
-    const description = cleanText(descMatch ? descMatch[1] : '');
+    // Check IMDb ID for high-res Metahub poster
+    const imdbMatch = html.match(/data-id="(tt\d+)"/i) || html.match(/[?&]imdb_id=(tt\d+)/i);
+    let poster = '';
+    let backdrop = '';
+    if (imdbMatch) {
+      const tt = imdbMatch[1];
+      poster = `https://images.metahub.space/poster/medium/${tt}/img`;
+      backdrop = `https://images.metahub.space/background/medium/${tt}/img`;
+    } else {
+      const imgMatch = html.match(/<meta property="og:image" content="([^"]+)"/i) ||
+                       html.match(/<img[^>]+class="[^"]*thumbnail[^"]*"[^>]+src="([^"]+)"/i);
+      poster = imgMatch ? makeAbsolute(imgMatch[1], BASE_URL) : '';
+    }
 
-    // Poster
-    const imgMatch = html.match(/<meta property="og:image" content="([^"]+)"/i) ||
-                     html.match(/<img[^>]+class="[^"]*thumbnail[^"]*"[^>]+src="([^"]+)"/i);
-    const poster = imgMatch ? makeAbsolute(imgMatch[1], BASE_URL) : '';
+    // Official movie description (schema.org or og:description, NOT footer text)
+    const schemaDescMatch = html.match(/"description"\s*:\s*"([^"]+)"/);
+    const ogDescMatch = html.match(/<meta property="og:description" content="([^"]+)"/i);
+    let description = cleanText(schemaDescMatch ? schemaDescMatch[1] : (ogDescMatch ? ogDescMatch[1] : ''));
+    if (description.includes('Tecrübeli çeviri')) description = '';
 
     // Duration & Rating
     const durMatch = html.match(/data-duration="([^"]+)"/i) || html.match(/(\d+)\s*Dakika/i);
@@ -393,24 +446,24 @@ async function extractDetails(targetUrl) {
       }
     });
 
-    // Check dual audio
     const isDual = /dual/i.test(html);
     const isDub = /dublaj/i.test(html) || /dublaj/i.test(title);
 
     return {
-      id: targetUrl,
+      id: cleanUrl,
       title: title,
       description: description,
       summary: description,
       image: poster,
       poster: poster,
       coverUrl: poster,
+      backdropUrl: backdrop || undefined,
       rating: rating,
       duration: duration,
       actors: actors,
       subAvailable: true,
       dubAvailable: isDual || isDub,
-      type: targetUrl.includes('/dizi/') ? 'series' : 'movie'
+      type: cleanUrl.includes('/dizi/') ? 'series' : 'movie'
     };
   } catch (err) {
     return {
@@ -428,16 +481,18 @@ async function extractDetails(targetUrl) {
  */
 async function extractEpisodes(targetUrl) {
   try {
-    const html = await httpGet(targetUrl, { Referer: BASE_URL + '/' });
+    const cleanUrl = String(targetUrl || '').replace(/#.*$/, '');
+    const html = await httpGet(cleanUrl, { Referer: BASE_URL + '/' });
 
     // If it's a TV series, check for episode links
-    if (targetUrl.includes('/dizi/')) {
+    if (cleanUrl.includes('/dizi/')) {
       const epMatches = [...html.matchAll(/<a[^>]+href="([^"]*(?:\/sezon-[0-9]+|\/bolum-[0-9]+)[^"]*)"[^>]*>([\s\S]*?)<\/a>/gi)];
       const episodes = [];
       const seen = new Set();
 
       for (const m of epMatches) {
-        const epUrl = makeAbsolute(m[1], BASE_URL);
+        const epClean = m[1].replace(/#.*$/, '');
+        const epUrl = makeAbsolute(epClean, BASE_URL);
         if (seen.has(epUrl)) continue;
         seen.add(epUrl);
 
@@ -474,10 +529,10 @@ async function extractEpisodes(targetUrl) {
 
     return [
       {
-        id: targetUrl,
+        id: cleanUrl,
         title: title,
-        url: targetUrl,
-        href: targetUrl,
+        url: cleanUrl,
+        href: cleanUrl,
         season: 1,
         episode: 1,
         seasonNumber: 1,
@@ -488,12 +543,13 @@ async function extractEpisodes(targetUrl) {
       }
     ];
   } catch (_) {
+    const cleanUrl = String(targetUrl || '').replace(/#.*$/, '');
     return [
       {
-        id: targetUrl,
+        id: cleanUrl,
         title: 'Full Film',
-        url: targetUrl,
-        href: targetUrl,
+        url: cleanUrl,
+        href: cleanUrl,
         season: 1,
         episode: 1,
         seasonNumber: 1,
@@ -511,8 +567,9 @@ async function extractEpisodes(targetUrl) {
  */
 async function extractStreamUrl(targetUrl, lang) {
   try {
+    const cleanUrl = String(targetUrl || '').replace(/#.*$/, '');
     const want = String(lang || 'sub').trim().toLowerCase() === 'dub' ? 'dub' : 'sub';
-    const html = await httpGet(targetUrl, { Referer: BASE_URL + '/' });
+    const html = await httpGet(cleanUrl, { Referer: BASE_URL + '/' });
 
     // Collect embed URLs from player tabs and iframes
     let rapidEmbedUrl = '';
@@ -576,22 +633,19 @@ async function extractStreamUrl(targetUrl, lang) {
     // Process Rapid embed
     if (rapidEmbedUrl) {
       try {
-        const rHostname = new URL(rapidEmbedUrl).hostname;
+        const rHostname = getHostname(rapidEmbedUrl);
         const rHtml = await httpGet(rapidEmbedUrl, { Referer: BASE_URL + '/' });
         const masterUrl = decodeEmbedStream(rHtml, rHostname);
 
         if (masterUrl) {
           rapidStreamUrl = masterUrl;
 
-          // Check if Rapid master.m3u8 has isolated audio variants (a1 = Turkish, a2 = English)
-          // index-f2-v1-a1.m3u8 (1080p Dub) vs index-f2-v1-a2.m3u8 (1080p Sub / Original Audio)
           const baseMasterDir = masterUrl.substring(0, masterUrl.lastIndexOf('/') + 1);
           const masterQuery = masterUrl.includes('?') ? masterUrl.substring(masterUrl.indexOf('?')) : '';
 
           rapidDubUrl = `${baseMasterDir}index-f2-v1-a1.m3u8${masterQuery}`;
           rapidSubUrl = `${baseMasterDir}index-f2-v1-a2.m3u8${masterQuery}`;
 
-          // Extract subtitles from Rapid embed HTML
           const tracksMatch = rHtml.match(/tracks\s*:\s*(\[[^\]]+\])/);
           if (tracksMatch) {
             try {
@@ -615,14 +669,13 @@ async function extractStreamUrl(targetUrl, lang) {
     // Process CloseLoad embed
     if (closeLoadEmbedUrl) {
       try {
-        const cHostname = new URL(closeLoadEmbedUrl).hostname;
+        const cHostname = getHostname(closeLoadEmbedUrl);
         const cHtml = await httpGet(closeLoadEmbedUrl, { Referer: BASE_URL + '/' });
         const streamUrl = decodeEmbedStream(cHtml, cHostname);
 
         if (streamUrl) {
           closeLoadStreamUrl = streamUrl;
 
-          // Extract subtitles from CloseLoad embed HTML
           const tracksMatch = cHtml.match(/tracks\s*:\s*(\[[^\]]+\])/);
           if (tracksMatch) {
             try {
@@ -646,7 +699,6 @@ async function extractStreamUrl(targetUrl, lang) {
     let streamLabel = '';
 
     if (want === 'sub') {
-      // Subtitled: Prefer Rapid isolated English Audio stream (a2)
       if (rapidSubUrl) {
         selectedUrl = rapidSubUrl;
         streamLabel = 'sub 1080p';
@@ -658,7 +710,6 @@ async function extractStreamUrl(targetUrl, lang) {
         streamLabel = 'sub 1080p';
       }
     } else {
-      // Dubbed: Prefer Rapid Turkish Dub (a1) or CloseLoad
       if (rapidDubUrl) {
         selectedUrl = rapidDubUrl;
         streamLabel = 'dub 1080p';
@@ -672,7 +723,7 @@ async function extractStreamUrl(targetUrl, lang) {
     }
 
     if (!selectedUrl) {
-      throw new Error(`Failed to extract playable stream for ${targetUrl}`);
+      throw new Error(`Failed to extract playable stream for ${cleanUrl}`);
     }
 
     // Build servers list
