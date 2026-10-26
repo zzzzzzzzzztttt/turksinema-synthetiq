@@ -39,7 +39,7 @@ function makeAbsolute(path, base = BASE_URL) {
  */
 async function httpGet(url, customHeaders = {}) {
   const headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8',
     'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
     'Referer': BASE_URL + '/',
@@ -347,17 +347,306 @@ async function extractEpisodes(seriesUrl) {
 }
 
 /**
+ * Dzen Stream Resolver
+ * Prioritizes direct high-speed MP4 video streams over HLS to prevent local proxy 502 and CoreMedia 400 errors.
+ */
+async function resolveDzen(embedUrl) {
+  try {
+    let cleanUrl = embedUrl;
+    if (cleanUrl.startsWith('//')) cleanUrl = 'https:' + cleanUrl;
+    const html = await httpGet(cleanUrl, { 'Referer': 'https://dizci.net/' });
+    if (!html) return null;
+
+    const streamMatch = html.match(/"streams":\s*(\[[^\]]+\])/);
+    if (!streamMatch) return null;
+
+    const streams = JSON.parse(streamMatch[1]);
+    const qualityLabels = {
+      'fullhd': '1080p',
+      'high': '720p',
+      'medium': '480p',
+      'low': '360p',
+      'lowest': '240p',
+      'tiny': '144p'
+    };
+    const order = ['fullhd', 'high', 'medium', 'low', 'lowest', 'tiny'];
+
+    // 1. Prioritize Direct MP4 Video Streams (Native iOS AVPlayer safe)
+    const validMp4s = streams.filter(s => s && s.url && s.type !== 'hls' && s.type !== 'dash');
+    if (validMp4s.length > 0) {
+      let best = validMp4s[0];
+      for (const pref of order) {
+        const found = validMp4s.find(s => s.type === pref);
+        if (found) { best = found; break; }
+      }
+
+      const streamList = [];
+      const serverList = [];
+      for (const pref of order) {
+        const v = validMp4s.find(item => item.type === pref);
+        if (v) {
+          const qLabel = qualityLabels[v.type] || v.type;
+          streamList.push(`${qLabel} MP4`, v.url);
+          serverList.push({ name: `Dzen (${qLabel})`, url: v.url });
+        }
+      }
+
+      const bestQuality = qualityLabels[best.type] || '1080p';
+      return {
+        url: best.url,
+        streamUrl: best.url,
+        format: 'mp4',
+        streamType: 'mp4',
+        quality: bestQuality,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15',
+          'Referer': 'https://dzen.ru/'
+        },
+        streams: streamList.length > 0 ? streamList : [`${bestQuality} MP4`, best.url],
+        servers: serverList.length > 0 ? serverList : [{ name: `Dzen ${bestQuality}`, url: best.url }],
+        serverName: `Dzen ${bestQuality}`
+      };
+    }
+
+    // 2. Fallback to HLS
+    const hls = streams.find(s => s && s.url && s.type === 'hls');
+    if (hls) {
+      return {
+        url: hls.url,
+        streamUrl: hls.url,
+        format: 'hls',
+        streamType: 'hls',
+        quality: 'Auto',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15',
+          'Referer': 'https://dzen.ru/'
+        },
+        streams: ['Auto HLS', hls.url],
+        servers: [{ name: 'Dzen HLS', url: hls.url }],
+        serverName: 'Dzen HLS'
+      };
+    }
+
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
+
+/**
+ * VidMoly Stream Resolver
+ */
+async function resolveVidMoly(embedUrl) {
+  try {
+    let cleanUrl = embedUrl;
+    if (cleanUrl.startsWith('//')) cleanUrl = 'https:' + cleanUrl;
+    if (cleanUrl.includes('vidmoly.to')) cleanUrl = cleanUrl.replace('vidmoly.to', 'vidmoly.biz');
+    if (cleanUrl.includes('vidmoly.net')) cleanUrl = cleanUrl.replace('vidmoly.net', 'vidmoly.biz');
+
+    const html = await httpGet(cleanUrl, { 'Referer': BASE_URL + '/' });
+    if (!html) return null;
+
+    const m = html.match(/file:\s*["']([^"']+\.m3u8[^"']*)["']/);
+    if (m) {
+      return {
+        url: m[1],
+        streamUrl: m[1],
+        format: 'hls',
+        streamType: 'hls',
+        quality: '1080p',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15',
+          'Referer': 'https://vidmoly.biz/'
+        },
+        streams: ['1080p HLS', m[1]],
+        servers: [{ name: 'VidMoly 1080p', url: m[1] }],
+        serverName: 'VidMoly 1080p'
+      };
+    }
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
+
+/**
+ * OK.ru / Odnoklassniki Stream Resolver
+ */
+async function resolveOkRu(embedUrl) {
+  try {
+    let cleanUrl = embedUrl;
+    if (cleanUrl.startsWith('//')) cleanUrl = 'https:' + cleanUrl;
+    const html = await httpGet(cleanUrl, { 'Referer': 'https://dizci.net/' });
+    if (!html) return null;
+
+    const dataOptMatch = html.match(/data-options=["']([^"']+)["']/i);
+    if (!dataOptMatch) return null;
+
+    const decoded = dataOptMatch[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+    const opts = JSON.parse(decoded);
+    const meta = typeof opts.flashvars?.metadata === 'string' ? JSON.parse(opts.flashvars.metadata) : (opts.flashvars?.metadata || {});
+
+    // Option A: Direct MP4 Video Streams (Native iOS AVPlayer safe)
+    if (meta.videos && Array.isArray(meta.videos) && meta.videos.length > 0) {
+      const order = ['full', 'hd', 'sd', 'low', 'lowest', 'mobile'];
+      const qualityLabels = { 'full': '1080p', 'hd': '720p', 'sd': '480p', 'low': '360p', 'lowest': '240p', 'mobile': '144p' };
+      const validVideos = meta.videos.filter(v => v && v.url);
+      if (validVideos.length > 0) {
+        let best = validVideos[0];
+        for (const pref of order) {
+          const found = validVideos.find(v => v.name === pref);
+          if (found) { best = found; break; }
+        }
+
+        const streams = [];
+        const servers = [];
+        for (const pref of order) {
+          const v = validVideos.find(item => item.name === pref);
+          if (v) {
+            const label = qualityLabels[v.name] || v.name;
+            streams.push(`${label} MP4`, v.url);
+            servers.push({ name: `OK.ru (${label})`, url: v.url });
+          }
+        }
+
+        const bestLabel = qualityLabels[best.name] || 'HD';
+        return {
+          url: best.url,
+          streamUrl: best.url,
+          format: 'mp4',
+          streamType: 'mp4',
+          quality: bestLabel,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15',
+            'Referer': 'https://ok.ru/'
+          },
+          streams: streams.length > 0 ? streams : [`${bestLabel} MP4`, best.url],
+          servers: servers.length > 0 ? servers : [{ name: `OK.ru ${bestLabel}`, url: best.url }],
+          serverName: `OK.ru ${bestLabel}`
+        };
+      }
+    }
+
+    // Option B: Master HLS
+    if (meta.hlsManifestUrl) {
+      return {
+        url: meta.hlsManifestUrl,
+        streamUrl: meta.hlsManifestUrl,
+        format: 'hls',
+        streamType: 'hls',
+        quality: 'Auto',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15',
+          'Referer': 'https://ok.ru/'
+        },
+        streams: ['Auto HLS', meta.hlsManifestUrl],
+        servers: [{ name: 'OK.ru HLS', url: meta.hlsManifestUrl }],
+        serverName: 'OK.ru HLS'
+      };
+    }
+
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
+
+/**
  * Extract video stream handler with strict sub vs dub separation
  */
-async function extractStreamUrl(pageUrl, lang) {
+async function extractStreamUrl(episode, lang) {
   try {
-    const targetUrl = makeAbsolute(pageUrl);
+    let targetUrl = '';
+    if (typeof episode === 'object' && episode !== null) {
+      targetUrl = makeAbsolute(episode.url || episode.id || episode.href || '');
+    } else {
+      targetUrl = makeAbsolute(episode);
+    }
+
+    if (!targetUrl) {
+      return {
+        url: '',
+        streamUrl: '',
+        streamType: 'mp4',
+        format: 'mp4',
+        quality: '1080p',
+        headers: {},
+        streams: [],
+        servers: [],
+        subtitles: [],
+        error: { message: 'Geçersiz bölüm bağlantısı' }
+      };
+    }
+
     const want = String(lang || 'sub').trim().toLowerCase() === 'dub' ? 'dub' : 'sub';
     const altLang = want === 'dub' ? 'sub' : 'dub';
 
     const html = await httpGet(targetUrl);
+    if (!html) {
+      return {
+        url: '',
+        streamUrl: '',
+        streamType: 'mp4',
+        format: 'mp4',
+        quality: '1080p',
+        headers: {},
+        streams: [],
+        servers: [],
+        subtitles: [],
+        error: { message: 'Dizci: Sayfa içeriği alınamadı' }
+      };
+    }
 
-    // Extract VidMoly and Dzen embed IDs for both sub and dub
+    // 1. Structured versions parsing (Dizci Next.js App Router state)
+    let versions = [];
+    const vm = html.match(/\\?"versions\\?":\s*(\[\{[\s\S]*?\}\])\s*,\s*\\?"actionLabel\\?"/);
+    if (vm) {
+      try {
+        const jsonStr = vm[1].replace(/\\"/g, '"').replace(/\\\//g, '/').replace(/\\u0026/g, '&');
+        versions = JSON.parse(jsonStr);
+      } catch (_) {}
+    }
+
+    // Order versions: desired language first, then alternate
+    const orderedVersions = [];
+    const prefVer = versions.find(v => v.language === want);
+    if (prefVer) orderedVersions.push(prefVer);
+    const altVer = versions.find(v => v.language === altLang);
+    if (altVer && altVer !== prefVer) orderedVersions.push(altVer);
+
+    for (const ver of orderedVersions) {
+      const sources = Array.isArray(ver.sources) ? ver.sources : [];
+      for (const src of sources) {
+        const provider = String(src.provider || '').toLowerCase();
+        const embedUrl = String(src.embedUrl || '');
+
+        let stream = null;
+        if (provider.includes('dzen') || embedUrl.includes('dzen.ru')) {
+          stream = await resolveDzen(embedUrl);
+        } else if (provider.includes('vidmoly') || embedUrl.includes('vidmoly')) {
+          stream = await resolveVidMoly(embedUrl);
+        } else if (provider.includes('ok') || embedUrl.includes('ok.ru') || embedUrl.includes('odnoklassniki')) {
+          stream = await resolveOkRu(embedUrl);
+        }
+
+        if (stream && stream.url) {
+          const verLabel = ver.language === 'dub' ? 'Dublaj (TR)' : 'Altyazılı (EN)';
+          return {
+            url: stream.url,
+            streamUrl: stream.streamUrl || stream.url,
+            streamType: stream.streamType || 'mp4',
+            format: stream.format || 'mp4',
+            quality: stream.quality || '1080p',
+            headers: stream.headers || {},
+            streams: stream.streams && stream.streams.length > 0 ? stream.streams : [`${stream.quality} ${(stream.format || 'mp4').toUpperCase()}`, stream.url],
+            servers: stream.servers && stream.servers.length > 0 ? stream.servers : [{ name: `Dizci ${stream.serverName} (${verLabel})`, url: stream.url }],
+            subtitles: []
+          };
+        }
+      }
+    }
+
+    // 2. Fallback: search for VidMoly or Dzen embeds via regex in HTML
     function findEmbed(preferredLang, provider) {
       let reg;
       if (provider === 'vidmoly') {
@@ -369,100 +658,64 @@ async function extractStreamUrl(pageUrl, lang) {
       return match ? match[1].replace(/\.html$/i, '') : null;
     }
 
-    let vidmolyId = findEmbed(want, 'vidmoly') || findEmbed(altLang, 'vidmoly');
-    let dzenId = findEmbed(want, 'dzen') || findEmbed(altLang, 'dzen');
-
-    let streamUrl = null;
-    let providerName = '';
-
-    // 1. Try VidMoly (Primary)
+    const vidmolyId = findEmbed(want, 'vidmoly') || findEmbed(altLang, 'vidmoly');
     if (vidmolyId) {
-      try {
-        const vmUrl = `https://vidmoly.org/embed-${vidmolyId}.html`;
-        const vmHtml = await httpGet(vmUrl, { 'Referer': BASE_URL + '/' });
-        const m = vmHtml.match(/file:\s*["']([^"']+\.m3u8[^"']*)["']/);
-        if (m) {
-          streamUrl = m[1];
-          providerName = 'VidMoly';
-        }
-      } catch (_) {}
-    }
-
-    // 2. Try Dzen (Fallback)
-    if (!streamUrl && dzenId) {
-      try {
-        const dzUrl = `https://dzen.ru/embed/${dzenId}`;
-        const dzHtml = await httpGet(dzUrl, { 'Referer': BASE_URL + '/' });
-        const m = dzHtml.match(/(https?:\/\/[^"'\s]+\.m3u8[^"'\s]*)/i);
-        if (m) {
-          streamUrl = m[1];
-          providerName = 'Dzen';
-        }
-      } catch (_) {}
-    }
-
-    if (!streamUrl) {
-      throw new Error(`No stream extracted for ${want.toUpperCase()} on Dizci`);
-    }
-
-    const label = `${want === 'dub' ? 'Dublaj (TR)' : 'Altyazılı (EN)'} · ${providerName} 1080p`;
-    const defaultQuality = '1080p';
-
-    const servers = [
-      {
-        name: `Dizci ${providerName} (${want.toUpperCase()})`,
-        label: label,
-        url: streamUrl,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Referer': providerName === 'Dzen' ? 'https://dzen.ru/' : 'https://vidmoly.org/'
-        },
-        streamType: 'hls',
-        lang: want,
-        audioLanguage: want === 'dub' ? 'tr' : 'en',
-        audioLanguages: [want === 'dub' ? 'tr' : 'en'],
-        qualities: [{
-          label: defaultQuality,
-          url: streamUrl,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Referer': providerName === 'Dzen' ? 'https://dzen.ru/' : 'https://vidmoly.org/'
-          }
-        }],
-        subtitles: []
+      const stream = await resolveVidMoly(`https://vidmoly.biz/embed-${vidmolyId}.html`);
+      if (stream && stream.url) {
+        return {
+          url: stream.url,
+          streamUrl: stream.streamUrl || stream.url,
+          streamType: stream.streamType,
+          format: stream.format,
+          quality: stream.quality,
+          headers: stream.headers,
+          streams: stream.streams,
+          servers: stream.servers,
+          subtitles: []
+        };
       }
-    ];
+    }
 
-    const streams = [
-      (want === 'dub' ? 'dub ' : 'sub ') + defaultQuality, streamUrl,
-      'Auto ' + defaultQuality, streamUrl
-    ];
+    const dzenId = findEmbed(want, 'dzen') || findEmbed(altLang, 'dzen');
+    if (dzenId) {
+      const stream = await resolveDzen(`https://dzen.ru/embed/${dzenId}`);
+      if (stream && stream.url) {
+        return {
+          url: stream.url,
+          streamUrl: stream.streamUrl || stream.url,
+          streamType: stream.streamType,
+          format: stream.format,
+          quality: stream.quality,
+          headers: stream.headers,
+          streams: stream.streams,
+          servers: stream.servers,
+          subtitles: []
+        };
+      }
+    }
 
     return {
-      url: streamUrl,
-      streams: streams,
-      streamType: 'hls',
-      lang: want,
-      quality: defaultQuality,
-      defaultQuality: defaultQuality,
-      qualities: [{
-        label: defaultQuality,
-        url: streamUrl,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Referer': providerName === 'Dzen' ? 'https://dzen.ru/' : 'https://vidmoly.org/'
-        }
-      }],
-      servers: servers,
+      url: '',
+      streamUrl: '',
+      streamType: 'mp4',
+      format: 'mp4',
+      quality: '1080p',
+      headers: {},
+      streams: [],
+      servers: [],
       subtitles: [],
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Referer': providerName === 'Dzen' ? 'https://dzen.ru/' : 'https://vidmoly.org/'
-      }
+      error: { message: `Dizci: ${want.toUpperCase()} için oynatılabilir video kaynağı bulunamadı` }
     };
   } catch (err) {
     return {
+      url: '',
+      streamUrl: '',
+      streamType: 'mp4',
+      format: 'mp4',
+      quality: '1080p',
+      headers: {},
       streams: [],
+      servers: [],
       subtitles: [],
       error: { message: err ? err.message : 'Dizci stream extraction failed' }
     };
@@ -550,3 +803,15 @@ globalThis.extractStreamUrl = extractStreamUrl;
 globalThis.extractSubtitles = extractSubtitles;
 globalThis.discoveryHome = discoveryHome;
 globalThis.discoveryFeed = discoveryFeed;
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    searchResults,
+    extractDetails,
+    extractEpisodes,
+    extractStreamUrl,
+    extractSubtitles,
+    discoveryHome,
+    discoveryFeed
+  };
+}
