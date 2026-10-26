@@ -3,7 +3,7 @@
   "repositoryId": "turksinema-synthetiq",
   "name": "TurkSinema Synthetiq Repository",
   "enabled": true,
-  "publishedAtMs": 1793038892149,
+  "publishedAtMs": 1793050399466,
   "bundle": {
     "version": 18,
     "minAppVersion": "8.0.0",
@@ -286,7 +286,7 @@
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/anizm-source-v1.zip",
       "packagePath": "/modules/anizm-source-v1.zip",
       "sha256": "048c8e0c5a574305d7af0f3bf01860e9796e58993d659acf398bdc6347f9b430",
-      "publishedAtMs": 1793038892149,
+      "publishedAtMs": 1793050399466,
       "changelog": [
         "1.0.3: Clean episode title extraction isolating v3-anime-episode-grid and strong tags, eliminating messy concatenated catalog text and header action buttons.",
         "1.0.2: Fix audio loss on demuxed HLS streams by binding master HLS playlist with full audio track synchronization, and populate direct playable URLs on all resolved servers in the Server Tab.",
@@ -304,8 +304,36 @@
         ],
         "iconUrl": "https://www.google.com/s2/favicons?domain=anizm.com.tr&sz=128"
       }
+    },
+    {
+      "moduleId": "filmmakinesi-source-v1",
+      "moduleFamilyId": "filmmakinesi_source_v1",
+      "moduleIdentity": "SP-VID-990-FLMK",
+      "moduleIdentityNumber": 990,
+      "contentType": "video",
+      "version": "1.0.0",
+      "moduleVersion": "1.0.0",
+      "minAppVersion": "8.0.0",
+      "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/filmmakinesi-source-v1.zip",
+      "packagePath": "/modules/filmmakinesi-source-v1.zip",
+      "sha256": "7eb07dbd0d39b8004a27077d7217a2f74e994878c05198def1f4a3fce9b258df",
+      "publishedAtMs": 1793050399466,
+      "changelog": [
+        "1.0.0: Dedicated FilmMakinesi module with isolated Rapid a2 (Original Audio + Turkish CC) and a1 (Turkish Dub) variant streams, CloseLoad support, and inlined WebVTT subtitles."
+      ],
+      "presentation": {
+        "category": "Movies & TV",
+        "purpose": "1080p Full HD Movies & Series with Switchable Original Audio (Altyazılı) and Turkish Dub (Dublaj) via Rapid & CloseLoad",
+        "recommended": true,
+        "language": "Turkish Sub/Dub",
+        "languages": [
+          "sub",
+          "dub"
+        ],
+        "iconUrl": "https://filmmakinesi.to/uploads/logo/4655823-logo.png"
+      }
     }
   ],
   "version": "1.0.0",
-  "updatedAt": "2026-10-26T18:21:32.148Z"
+  "updatedAt": "2026-10-26T21:33:19.465Z"
 }
