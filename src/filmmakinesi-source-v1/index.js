@@ -9,7 +9,8 @@
  *   - Native Audio & Subtitles switcher integration for Synthetiq Player
  *   - Safe pure-JS deobfuscation (Zero eval, Zero new Function, Zero new URL)
  *   - Inlined WebVTT subtitles to prevent iOS AVPlayer 403 blocks
- *   - High-res Metahub posters via IMDb ID detection
+ *   - Unblocked Amazon & Metahub high-res posters via Cinemeta and IMDb ID indexing
+ *   - Version 1.0.2
  */
 
 const BASE_URL = 'https://filmmakinesi.to';
@@ -248,6 +249,102 @@ async function httpGet(url, customHeaders = {}) {
   return text || '';
 }
 
+const posterCache = new Map();
+
+function normalizeStr(str) {
+  return String(str || '').toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function fetchCinemetaMetas(query) {
+  if (!query) return [];
+  const enc = encodeURIComponent(query);
+  try {
+    const [mResText, sResText] = await Promise.all([
+      httpGet(`https://v3-cinemeta.strem.io/catalog/movie/top/search=${enc}.json`).catch(() => ''),
+      httpGet(`https://v3-cinemeta.strem.io/catalog/series/top/search=${enc}.json`).catch(() => '')
+    ]);
+    const mRes = mResText ? JSON.parse(mResText) : {};
+    const sRes = sResText ? JSON.parse(sResText) : {};
+    return [...(mRes.metas || []), ...(sRes.metas || [])];
+  } catch (_) {
+    return [];
+  }
+}
+
+async function resolveCardPoster(card, queryMetas = []) {
+  if (card.id && posterCache.has(card.id)) {
+    return posterCache.get(card.id);
+  }
+
+  const rawPoster = card.rawPoster || card.image || '';
+  const slugMatch = rawPoster.match(/\/([^\/]+?)(?:\.jpg|\.webp|-thumb)/i);
+  const slug = slugMatch ? slugMatch[1].replace(/[-_]/g, ' ') : '';
+  const yearMatch = (rawPoster + ' ' + card.href).match(/\b(19\d\d|20\d\d)\b/);
+  const year = yearMatch ? yearMatch[1] : '';
+
+  const normTitle = normalizeStr(card.title);
+  const normSlug = normalizeStr(slug);
+
+  // 1. Match against query metas
+  for (const m of queryMetas) {
+    const mName = normalizeStr(m.name);
+    const mYear = String(m.releaseInfo || m.year || '');
+    const matchName = (normSlug && (normSlug.includes(mName) || mName.includes(normSlug))) ||
+                      (normTitle && (normTitle.includes(mName) || mName.includes(normTitle)));
+    const matchYear = !year || !mYear || mYear.includes(year) || year.includes(mYear);
+
+    if (matchName && matchYear && (m.poster || m.id)) {
+      const p = m.poster || `https://images.metahub.space/poster/medium/${m.id}/img`;
+      if (card.id) posterCache.set(card.id, p);
+      return p;
+    }
+  }
+
+  // 2. Direct Cinemeta lookup by slug or card title
+  const searchKey = slug || card.title;
+  if (searchKey) {
+    const isSeries = card.href && card.href.includes('/dizi/');
+    const primaryCat = isSeries ? 'series' : 'movie';
+    const fallbackCat = isSeries ? 'movie' : 'series';
+    try {
+      const encKey = encodeURIComponent(searchKey);
+      const resText = await httpGet(`https://v3-cinemeta.strem.io/catalog/${primaryCat}/top/search=${encKey}.json`);
+      const res = resText ? JSON.parse(resText) : null;
+      if (res && res.metas && res.metas.length > 0) {
+        const top = res.metas[0];
+        const p = top.poster || (top.id ? `https://images.metahub.space/poster/medium/${top.id}/img` : '');
+        if (p) {
+          if (card.id) posterCache.set(card.id, p);
+          return p;
+        }
+      }
+      const fbText = await httpGet(`https://v3-cinemeta.strem.io/catalog/${fallbackCat}/top/search=${encKey}.json`);
+      const fb = fbText ? JSON.parse(fbText) : null;
+      if (fb && fb.metas && fb.metas.length > 0) {
+        const top = fb.metas[0];
+        const p = top.poster || (top.id ? `https://images.metahub.space/poster/medium/${top.id}/img` : '');
+        if (p) {
+          if (card.id) posterCache.set(card.id, p);
+          return p;
+        }
+      }
+    } catch (_) {}
+  }
+
+  // 3. Fallback to IMDb ID if in href
+  const ttMatch = (card.href + ' ' + card.title).match(/(tt\d{5,})/i);
+  if (ttMatch) {
+    const p = `https://images.metahub.space/poster/medium/${ttMatch[1]}/img`;
+    if (card.id) posterCache.set(card.id, p);
+    return p;
+  }
+
+  return '';
+}
+
 /**
  * Parse movie/series cards from HTML
  */
@@ -301,13 +398,16 @@ function parseCards(html) {
       title: title,
       href: itemUrl,
       url: itemUrl,
+      rawPoster: rawPoster,
       image: rawPoster,
       poster: rawPoster,
       coverUrl: rawPoster,
+      posterUrl: rawPoster,
       rating: rating,
       duration: duration,
       subAvailable: true,
       dubAvailable: isDual || isDub,
+      isSeries: itemUrl.includes('/dizi/'),
       type: itemUrl.includes('/dizi/') ? 'series' : 'movie'
     });
   }
@@ -324,8 +424,23 @@ async function searchResults(query) {
 
   try {
     const searchUrl = `${BASE_URL}/arama/?s=${encodeURIComponent(q)}`;
-    const html = await httpGet(searchUrl, { Referer: BASE_URL + '/' });
+    const [html, queryMetas] = await Promise.all([
+      httpGet(searchUrl, { Referer: BASE_URL + '/' }),
+      fetchCinemetaMetas(q)
+    ]);
+
     const results = parseCards(html);
+
+    // Concurrently enrich all search results with unblocked posters
+    await Promise.all(results.map(async (item) => {
+      const p = await resolveCardPoster(item, queryMetas);
+      if (p) {
+        item.image = p;
+        item.poster = p;
+        item.coverUrl = p;
+        item.posterUrl = p;
+      }
+    }));
 
     const qLower = q.toLowerCase();
     results.sort((a, b) => {
@@ -347,6 +462,18 @@ async function discoveryHome() {
   try {
     const html = await httpGet(BASE_URL + '/', { Referer: BASE_URL + '/' });
     const allItems = parseCards(html);
+
+    // Enrich top 30 items for discovery home so cards have unblocked posters
+    const topItems = allItems.slice(0, 30);
+    await Promise.all(topItems.map(async (item) => {
+      const p = await resolveCardPoster(item);
+      if (p) {
+        item.image = p;
+        item.poster = p;
+        item.coverUrl = p;
+        item.posterUrl = p;
+      }
+    }));
 
     const movies = allItems.filter(i => i.type === 'movie');
     const series = allItems.filter(i => i.type === 'series');
@@ -387,7 +514,20 @@ async function discoveryFeed(page = 1) {
     const p = Math.max(1, parseInt(page, 10) || 1);
     const feedUrl = p === 1 ? `${BASE_URL}/filmler-1/` : `${BASE_URL}/filmler-1/page/${p}/`;
     const html = await httpGet(feedUrl, { Referer: BASE_URL + '/' });
-    return parseCards(html);
+    const items = parseCards(html);
+
+    // Enrich items
+    await Promise.all(items.slice(0, 20).map(async (item) => {
+      const p = await resolveCardPoster(item);
+      if (p) {
+        item.image = p;
+        item.poster = p;
+        item.coverUrl = p;
+        item.posterUrl = p;
+      }
+    }));
+
+    return items;
   } catch (_) {
     return [];
   }
@@ -404,10 +544,13 @@ async function extractDetails(targetUrl) {
     // Title
     const titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || html.match(/<meta property="og:title" content="([^"]+)"/i);
     let title = cleanText(titleMatch ? titleMatch[1] : '');
-    title = title.replace(/\s+(?:izle|Full HD izle)$/i, '').trim();
+    title = title.replace(/\s*izle\b/i, '').replace(/\s*\(\d{4}\)/, '').trim();
 
     // Check IMDb ID for high-res Metahub poster
-    const imdbMatch = html.match(/data-id="(tt\d+)"/i) || html.match(/[?&]imdb_id=(tt\d+)/i);
+    const imdbMatch = html.match(/data-id="(tt\d+)"/i) ||
+                     html.match(/[?&]imdb_id=(tt\d+)/i) ||
+                     html.match(/imdb\.com\/title\/(tt\d+)/i) ||
+                     html.match(/\b(tt\d{5,})\b/i);
     let poster = '';
     let backdrop = '';
     if (imdbMatch) {
@@ -415,16 +558,19 @@ async function extractDetails(targetUrl) {
       poster = `https://images.metahub.space/poster/medium/${tt}/img`;
       backdrop = `https://images.metahub.space/background/medium/${tt}/img`;
     } else {
-      const imgMatch = html.match(/<meta property="og:image" content="([^"]+)"/i) ||
-                       html.match(/<img[^>]+class="[^"]*thumbnail[^"]*"[^>]+src="([^"]+)"/i);
-      poster = imgMatch ? makeAbsolute(imgMatch[1], BASE_URL) : '';
+      // Resolve poster from Cinemeta
+      const resolved = await resolveCardPoster({ id: cleanUrl, href: cleanUrl, title: title, rawPoster: '' }, []);
+      if (resolved) {
+        poster = resolved;
+        backdrop = resolved;
+      }
     }
 
     // Official movie description (schema.org or og:description, NOT footer text)
     const schemaDescMatch = html.match(/"description"\s*:\s*"([^"]+)"/);
     const ogDescMatch = html.match(/<meta property="og:description" content="([^"]+)"/i);
     let description = cleanText(schemaDescMatch ? schemaDescMatch[1] : (ogDescMatch ? ogDescMatch[1] : ''));
-    if (description.includes('Tecrübeli çeviri')) description = '';
+    if (description.includes('Tecrübeli çeviri') || description.includes('Tecrbeli eviri')) description = '';
 
     // Duration & Rating
     const durMatch = html.match(/data-duration="([^"]+)"/i) || html.match(/(\d+)\s*Dakika/i);
@@ -457,12 +603,15 @@ async function extractDetails(targetUrl) {
       image: poster,
       poster: poster,
       coverUrl: poster,
-      backdropUrl: backdrop || undefined,
+      posterUrl: poster,
+      backdrop: backdrop,
+      backdropUrl: backdrop,
       rating: rating,
       duration: duration,
       actors: actors,
       subAvailable: true,
       dubAvailable: isDual || isDub,
+      isSeries: cleanUrl.includes('/dizi/'),
       type: cleanUrl.includes('/dizi/') ? 'series' : 'movie'
     };
   } catch (err) {
@@ -471,7 +620,9 @@ async function extractDetails(targetUrl) {
       title: 'FilmMakinesi Content',
       url: targetUrl,
       subAvailable: true,
-      dubAvailable: true
+      dubAvailable: true,
+      isSeries: targetUrl.includes('/dizi/'),
+      type: targetUrl.includes('/dizi/') ? 'series' : 'movie'
     };
   }
 }
