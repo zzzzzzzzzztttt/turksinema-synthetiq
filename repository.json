@@ -3,7 +3,7 @@
   "repositoryId": "turksinema-synthetiq",
   "name": "TurkSinema Synthetiq Repository",
   "enabled": true,
-  "publishedAtMs": 1793031523444,
+  "publishedAtMs": 1793038892149,
   "bundle": {
     "version": 18,
     "minAppVersion": "8.0.0",
@@ -109,14 +109,15 @@
       "moduleIdentity": "SP-VID-997-DZCI",
       "moduleIdentityNumber": 997,
       "contentType": "video",
-      "version": "1.0.2",
-      "moduleVersion": "1.0.2",
+      "version": "1.0.3",
+      "moduleVersion": "1.0.3",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizci-source-v1.zip",
       "packagePath": "/modules/dizci-source-v1.zip",
-      "sha256": "8354dd3869d95711a10077f7bb3108bb9cd6fe6f1a0c9858dcf09b02dbb547dc",
-      "publishedAtMs": 1793031523444,
+      "sha256": "1c69f88c2f7128d55d273a2b7a2ae3888ccb97b5a7bbb57aa2ff480ece324f0e",
+      "publishedAtMs": 1793038892149,
       "changelog": [
+        "1.0.3: Explicitly bind season-local number property on episode objects to prevent app from displaying cumulative series episode index (e.g. S5E55 -> S5E3).",
         "1.0.2: Add VK (VKontakte) 1080p video resolver supporting okcdn.ru direct streams, and parse authentic episode titles with accurate sub/dub language badges from episode cards.",
         "1.0.1: Prioritize direct progressive MP4 streams for Dzen and OK.ru to prevent iOS AVPlayer HTTP 502/400 errors, parse structured Next.js versions state, and add multi-provider fallback.",
         "1.0.0: Dedicated Dizci module with separate Sub (English original audio) and Dub (Turkish) streams."
@@ -284,8 +285,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/anizm-source-v1.zip",
       "packagePath": "/modules/anizm-source-v1.zip",
-      "sha256": "2af3d964c37e1c0e290db2df1933cc836dba61b1e6f39bdd0a03aec1ad532fc3",
-      "publishedAtMs": 1793031523444,
+      "sha256": "048c8e0c5a574305d7af0f3bf01860e9796e58993d659acf398bdc6347f9b430",
+      "publishedAtMs": 1793038892149,
       "changelog": [
         "1.0.3: Clean episode title extraction isolating v3-anime-episode-grid and strong tags, eliminating messy concatenated catalog text and header action buttons.",
         "1.0.2: Fix audio loss on demuxed HLS streams by binding master HLS playlist with full audio track synchronization, and populate direct playable URLs on all resolved servers in the Server Tab.",
@@ -306,5 +307,5 @@
     }
   ],
   "version": "1.0.0",
-  "updatedAt": "2026-10-26T16:18:43.442Z"
+  "updatedAt": "2026-10-26T18:21:32.148Z"
 }
