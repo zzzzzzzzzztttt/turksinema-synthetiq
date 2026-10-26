@@ -3,9 +3,9 @@
  * Target: Anizm (https://anizm.com.tr)
  * Contract Version 3 | contentType: video
  * Features:
- *   - Native Aincrad (Reklamsız) high-speed CDN streaming via anizmplayer.com HLS
- *   - Multi-translator resolution (Lawsonia, Adonis, AkatsukiSubs, etc.) with dedicated server labels
- *   - Multi-source mirror fallbacks (Aincrad HLS, YourUpload MP4, SendVid MP4, Vidmoly HLS, Mail.ru MP4)
+ *   - Native Aincrad (Reklamsız) high-speed CDN streaming via anizmplayer.com master HLS (full audio + video sync)
+ *   - Direct multi-server list population for Synthetiq Player Server Tab (Aincrad, YourUpload, SendVid, Vidmoly)
+ *   - Multi-translator resolution (Lawsonia, Adonis, AkatsukiSubs, Arcadia, etc.) with dedicated server tags
  *   - Automatic multi-quality resolution parsing (1080p, 720p, 480p, 360p) with zero Turnstile blocks
  *   - Safe pure-JS Dean Edwards packer unpacker (zero eval, zero Node.js dependencies)
  *   - Robust episode indexer with proper Season 1 and Specials/OVAs separation
@@ -369,7 +369,9 @@ async function extractEpisodes(animeUrl) {
 
 /**
  * Extract video stream
- * Resolves multiple fansub translators (Lawsonia, Adonis, AkatsukiSubs) and sources (Aincrad HLS, YourUpload MP4, SendVid MP4, Vidmoly HLS)
+ * Resolves multiple fansub translators (Lawsonia, Adonis, AkatsukiSubs, Arcadia, etc.)
+ * and sources (Aincrad master HLS, YourUpload MP4, SendVid MP4, Vidmoly HLS)
+ * with dedicated server tab buttons and full audio/video synchronization.
  */
 async function extractStreamUrl(episodeUrl) {
   try {
@@ -443,23 +445,30 @@ async function extractStreamUrl(episodeUrl) {
                     const masterUrl = gData.videoSource;
                     const mText = await httpGet(masterUrl, { 'Referer': BASE_URL + '/', 'Accept': '*/*' });
 
+                    // Check if audio is demuxed into separate #EXT-X-MEDIA:TYPE=AUDIO
+                    const hasSeparateAudio = /#EXT-X-MEDIA:TYPE=AUDIO/i.test(mText);
+
                     const qualities = [];
                     const lines = String(mText || '').split(/\r?\n/);
+                    let highestLabel = 'Auto';
+
                     for (let li = 0; li < lines.length; li++) {
                       const line = lines[li].trim();
                       if (line.startsWith('#EXT-X-STREAM-INF:')) {
                         const nameMatch = line.match(/NAME="([^"]+)"/i);
                         const resMatch = line.match(/RESOLUTION=([0-9x]+)/i);
                         const label = nameMatch ? nameMatch[1] : (resMatch ? resMatch[1] : 'Auto');
+                        highestLabel = label;
                         const nextLine = lines[li + 1] ? lines[li + 1].trim() : '';
-                        if (nextLine && !nextLine.startsWith('#')) {
-                          const qUrl = makeAbsolute(nextLine, 'https://anizmplayer.com');
-                          qualities.push({
-                            label: label,
-                            url: qUrl,
-                            headers: { 'Referer': 'https://anizmplayer.com/' }
-                          });
-                        }
+
+                        // If audio is separate, sub-playlists have NO AUDIO, so we MUST use masterUrl to retain audio!
+                        // If audio is muxed (single stream), sub-playlist has audio and can be used directly.
+                        const qUrl = hasSeparateAudio ? masterUrl : (nextLine && !nextLine.startsWith('#') ? makeAbsolute(nextLine, 'https://anizmplayer.com') : masterUrl);
+                        qualities.push({
+                          label: label,
+                          url: qUrl,
+                          headers: { 'Referer': 'https://anizmplayer.com/' }
+                        });
                       }
                     }
 
@@ -471,22 +480,25 @@ async function extractStreamUrl(episodeUrl) {
                       });
                     }
 
-                    const bestQuality = qualities[qualities.length - 1];
                     const serverName = `Aincrad [${transName}]`;
                     servers.push({
                       name: serverName,
                       label: `${serverName} · HLS`,
+                      url: masterUrl, // Direct playable server URL with synchronized audio + video
+                      streamType: 'hls',
+                      quality: highestLabel,
                       audioLanguage: 'ja',
                       audioLanguages: ['ja'],
+                      headers: { 'Referer': 'https://anizmplayer.com/' },
                       qualities: qualities,
                       subtitles: []
                     });
 
                     if (!primaryStream) {
                       primaryStream = {
-                        url: bestQuality.url,
+                        url: masterUrl, // Always use master playlist to guarantee full audio track synchronization
                         streamType: 'hls',
-                        quality: bestQuality.label,
+                        quality: highestLabel,
                         serverName: serverName,
                         headers: { 'Referer': 'https://anizmplayer.com/' }
                       };
@@ -513,8 +525,12 @@ async function extractStreamUrl(episodeUrl) {
                   servers.push({
                     name: serverName,
                     label: `${serverName} · 1080p MP4`,
+                    url: sUrl, // Direct playable server URL
+                    streamType: 'mp4',
+                    quality: '1080p',
                     audioLanguage: 'ja',
                     audioLanguages: ['ja'],
+                    headers: { 'Referer': 'https://www.yourupload.com/' },
                     qualities: [{ label: '1080p', url: sUrl, headers: { 'Referer': 'https://www.yourupload.com/' } }],
                     subtitles: []
                   });
@@ -539,17 +555,21 @@ async function extractStreamUrl(episodeUrl) {
               const vmIframe = pHtml.match(/vidmoly\.(?:to|me|net|biz)\/(?:embed-|w\/)?([a-zA-Z0-9]+)/i);
               if (vmIframe) {
                 const vmUrl = `https://vidmoly.to/embed-${vmIframe[1]}.html`;
-                const vmHtml = await httpGet(vmUrl, { 'Referer': pUrl });
-                const vmM3u8 = vmHtml.match(/file:\s*["']([^"']+\.m3u8[^"']*)["']/i) ||
-                               vmHtml.match(/sources:\s*\[\s*\{\s*file:\s*["']([^"']+)["']/i);
+                const vmRes = await httpGet(vmUrl, { 'Referer': pUrl });
+                const vmM3u8 = vmRes.match(/file:\s*["']([^"']+\.m3u8[^"']*)["']/i) ||
+                               vmRes.match(/sources:\s*\[\s*\{\s*file:\s*["']([^"']+)["']/i);
                 if (vmM3u8) {
                   const sUrl = vmM3u8[1];
                   const serverName = `Vidmoly [${transName}]`;
                   servers.push({
                     name: serverName,
                     label: `${serverName} · HLS`,
+                    url: sUrl, // Direct playable server URL
+                    streamType: 'hls',
+                    quality: '1080p',
                     audioLanguage: 'ja',
                     audioLanguages: ['ja'],
+                    headers: { 'Referer': 'https://vidmoly.to/' },
                     qualities: [{ label: '1080p', url: sUrl, headers: { 'Referer': 'https://vidmoly.to/' } }],
                     subtitles: []
                   });
@@ -580,8 +600,12 @@ async function extractStreamUrl(episodeUrl) {
                 servers.push({
                   name: serverName,
                   label: `${serverName} · 720p MP4`,
+                  url: sUrl, // Direct playable server URL
+                  streamType: 'mp4',
+                  quality: '720p',
                   audioLanguage: 'ja',
                   audioLanguages: ['ja'],
+                  headers: { 'Referer': 'https://sendvid.com/' },
                   qualities: [{ label: '720p', url: sUrl, headers: { 'Referer': 'https://sendvid.com/' } }],
                   subtitles: []
                 });
@@ -618,8 +642,12 @@ async function extractStreamUrl(episodeUrl) {
                   servers.push({
                     name: serverName,
                     label: `${serverName} · MP4`,
+                    url: best.url, // Direct playable server URL
+                    streamType: 'mp4',
+                    quality: best.label,
                     audioLanguage: 'ja',
                     audioLanguages: ['ja'],
+                    headers: { 'Referer': 'https://my.mail.ru/' },
                     qualities: qualities,
                     subtitles: []
                   });
@@ -647,9 +675,9 @@ async function extractStreamUrl(episodeUrl) {
     const streams = [];
     streams.push('sub ' + (primaryStream.quality || 'Auto'), primaryStream.url);
     for (const s of servers) {
-      for (const q of s.qualities) {
-        if (q.url !== primaryStream.url) {
-          streams.push(s.name + ' ' + q.label, q.url);
+      for (const q of (s.qualities || [])) {
+        if (q.url && q.url !== primaryStream.url) {
+          streams.push(`${s.name} ${q.label}`, q.url);
         }
       }
     }

@@ -282,17 +282,17 @@
       "moduleIdentity": "SP-VID-994-ANZM",
       "moduleIdentityNumber": 994,
       "contentType": "video",
-      "version": "1.0.1",
-      "moduleVersion": "1.0.1",
+      "version": "1.0.2",
+      "moduleVersion": "1.0.2",
       "releaseTrack": "stable",
       "file": "modules/anizm-source-v1.zip",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/anizm-source-v1.zip",
-      "sha256": "31d87f048d593644af03e75d39e0a5bd890bc0e97bb10c32ee29c6d6ad16b8ae",
-      "publishedAt": "2026-10-26T13:00:41.866Z",
-      "publishedAtMs": 1793019641867,
+      "sha256": "af008255146ab11e7fceb0828cca01c2ea9413f5400b6ee7df7a6d9d90a46d2f",
+      "publishedAt": "2026-10-26T13:35:43.017Z",
+      "publishedAtMs": 1793021743019,
       "presentation": {
         "category": "Anime",
-        "purpose": "Turkish Anime with Multi-Translator & Multi-Source Playback (Aincrad HLS, YourUpload, SendVid, Vidmoly)",
+        "purpose": "Turkish Anime with Multi-Translator & Multi-Source Playback (Aincrad Master HLS, YourUpload, SendVid, Vidmoly)",
         "recommended": true,
         "language": "Turkish Sub/Dub",
         "languages": [
@@ -302,6 +302,7 @@
         "iconUrl": "https://www.google.com/s2/favicons?domain=anizm.com.tr&sz=128"
       },
       "changelog": [
+        "1.0.2: Fix audio loss on demuxed HLS streams by binding master HLS playlist with full audio track synchronization, and populate direct playable URLs on all resolved servers in the Server Tab.",
         "1.0.1: Multi-translator and multi-source resolution (Aincrad HLS, YourUpload MP4, SendVid MP4, Vidmoly HLS), safe Dean Edwards unpacker, and structured Season/Special episode indexing.",
         "1.0.0: Dedicated Anizm module with hardcoded Turkish fansub subtitles burned into direct 1080p MP4 frames."
       ]
