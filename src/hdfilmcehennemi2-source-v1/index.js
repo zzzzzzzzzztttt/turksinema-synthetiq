@@ -550,10 +550,36 @@ async function extractStreamUrl(pageUrl, lang) {
     let molyData = null;
     const subtitles = [];
     const seenSubUrls = new Set();
+    let totalInlinedChars = 0;
+    const MAX_INLINE_BUDGET = 350000; // 350 KB safe limit for inlined VTT text
 
     function addSub(url, label, language, isDef, vttText, ref) {
       if (!url || seenSubUrls.has(url)) return;
       seenSubUrls.add(url);
+
+      const isForced = /forced|zorunlu/i.test(label || '');
+      const isTurkish = language === 'tr' || /tur|türk/i.test(label || '');
+      const trackKey = (isTurkish ? 'tr' : 'en') + (isForced ? '_forced' : '_cc');
+
+      // Deduplicate: If we already have a track for this language and kind, skip redundant track
+      if (subtitles.some(s => s._trackKey === trackKey)) {
+        return;
+      }
+
+      let contentToInline = undefined;
+      if (vttText && typeof vttText === 'string') {
+        const cleanVtt = vttText.replace(/^\uFEFF/, '').trim();
+        if (cleanVtt.includes('-->')) {
+          // Always inline Turkish tracks if within budget; secondary tracks only if budget permits
+          if (isTurkish || (totalInlinedChars + cleanVtt.length <= MAX_INLINE_BUDGET)) {
+            if (totalInlinedChars + cleanVtt.length <= MAX_INLINE_BUDGET * 1.5) {
+              contentToInline = cleanVtt;
+              totalInlinedChars += cleanVtt.length;
+            }
+          }
+        }
+      }
+
       subtitles.push({
         id: url,
         url: url,
@@ -561,14 +587,15 @@ async function extractStreamUrl(pageUrl, lang) {
         label: label,
         language: language,
         lang: language,
-        kind: 'captions',
+        kind: isForced ? 'forced' : 'captions',
         default: isDef,
         isDefault: isDef,
-        content: vttText || undefined,
+        content: contentToInline,
         format: 'vtt',
         headers: {
           'Referer': ref || 'https://vidload.top/'
-        }
+        },
+        _trackKey: trackKey
       });
     }
 
@@ -600,12 +627,17 @@ async function extractStreamUrl(pageUrl, lang) {
             for (const tr of conf.tracks || []) {
               if (tr.file && (tr.file.includes('.vtt') || tr.kind === 'captions')) {
                 const cleanFile = tr.file.replace(/\\/g, '');
+                const label = tr.label || 'Türkçe';
+                const isTr = /tur|türk/i.test(label);
+                const isForced = /forced|zorunlu/i.test(label);
+                const trackKey = (isTr ? 'tr' : 'en') + (isForced ? '_forced' : '_cc');
+                if (subtitles.some(s => s._trackKey === trackKey)) continue;
+
                 let vttBody = '';
                 try {
                   vttBody = await httpGet(cleanFile, { 'Referer': 'https://vidload.top/' });
                 } catch (_) {}
-                const isTr = /tur|türk/i.test(tr.label || '');
-                addSub(cleanFile, tr.label || 'Türkçe', isTr ? 'tr' : 'en', isTr, vttBody, 'https://vidload.top/');
+                addSub(cleanFile, label, isTr ? 'tr' : 'en', isTr, vttBody, 'https://vidload.top/');
               }
             }
           }
@@ -649,7 +681,7 @@ async function extractStreamUrl(pageUrl, lang) {
 
           molyData = { masterUrl, hasA1, hasA2, a1Url, a2Url };
 
-          // Download and inline WebVTT subtitles from Moly baseTracks if present
+          // Download and inline WebVTT subtitles from Moly baseTracks if present (skip already extracted tracks)
           const trMatch = vmHtml.match(/var\s+baseTracks\s*=\s*(\[[\s\S]*?\]);/);
           if (trMatch) {
             const fileMatches = [...trMatch[1].matchAll(/file:\s*["']([^"']+)["'][^}]*?label:\s*["']([^"']+)["']/gi)];
@@ -658,12 +690,17 @@ async function extractStreamUrl(pageUrl, lang) {
               if (fUrl.startsWith('//')) fUrl = 'https:' + fUrl;
               else if (fUrl.startsWith('/')) fUrl = new URL(fUrl, molyEmbed).href;
               if (fUrl.includes('.vtt')) {
+                const label = fm[2] || '';
+                const isTr = /tur|türk/i.test(label);
+                const isForced = /forced|zorunlu/i.test(label);
+                const trackKey = (isTr ? 'tr' : 'en') + (isForced ? '_forced' : '_cc');
+                if (subtitles.some(s => s._trackKey === trackKey)) continue;
+
                 let vttBody = '';
                 try {
                   vttBody = await httpGet(fUrl, { 'Referer': 'https://vidmoly.biz/' });
                 } catch (_) {}
-                const isTr = /tur|türk/i.test(fm[2] || '');
-                addSub(fUrl, fm[2], isTr ? 'tr' : 'en', isTr, vttBody, 'https://vidmoly.biz/');
+                addSub(fUrl, label, isTr ? 'tr' : 'en', isTr, vttBody, 'https://vidmoly.biz/');
               }
             }
           }
@@ -693,8 +730,7 @@ async function extractStreamUrl(pageUrl, lang) {
         lang: want,
         audioLanguage: want === 'dub' ? 'tr' : 'en',
         audioLanguages: ['tr', 'en'],
-        quality: '1080p',
-        subtitles: subtitles
+        quality: '1080p'
       });
     }
 
@@ -713,8 +749,7 @@ async function extractStreamUrl(pageUrl, lang) {
         lang: want,
         audioLanguage: (want === 'sub' && molyData.hasA2) ? 'en' : 'tr',
         audioLanguages: molyData.hasA2 ? ['tr', 'en'] : ['tr'],
-        quality: '1080p',
-        subtitles: subtitles
+        quality: '1080p'
       });
     }
 
@@ -766,6 +801,11 @@ async function extractStreamUrl(pageUrl, lang) {
       'Auto 1080p', primaryStreamUrl
     ];
 
+    const cleanSubtitles = subtitles.map(s => {
+      const { _trackKey, ...cleanSub } = s;
+      return cleanSub;
+    });
+
     return {
       url: primaryStreamUrl,
       streamUrl: primaryStreamUrl,
@@ -773,7 +813,7 @@ async function extractStreamUrl(pageUrl, lang) {
       headers: primaryHeaders,
       streams: flatStreams,
       servers: servers,
-      subtitles: subtitles
+      subtitles: cleanSubtitles
     };
   } catch (err) {
     return {
