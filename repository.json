@@ -3,13 +3,13 @@
   "repositoryId": "turksinema-synthetiq",
   "name": "TurkSinema Synthetiq Repository",
   "enabled": true,
-  "publishedAtMs": 1793015172903,
+  "publishedAtMs": 1793016464460,
   "bundle": {
     "version": 18,
     "minAppVersion": "8.0.0",
     "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/hdfilmcehennemi2-source-v1.zip",
     "packagePath": "/modules/hdfilmcehennemi2-source-v1.zip",
-    "sha256": "6458f0139ce40ec83c3a46a90b4e3f059ccced98eb2feb0f68b41d0fed77c1e7"
+    "sha256": "9d89aab586c821011de5e1d164eecda171cd0e6a9ac4ebd63fdaaca580f3f961"
   },
   "modules": [
     {
@@ -23,8 +23,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/hdfilmcehennemi2-source-v1.zip",
       "packagePath": "/modules/hdfilmcehennemi2-source-v1.zip",
-      "sha256": "6458f0139ce40ec83c3a46a90b4e3f059ccced98eb2feb0f68b41d0fed77c1e7",
-      "publishedAtMs": 1793015172903,
+      "sha256": "9d89aab586c821011de5e1d164eecda171cd0e6a9ac4ebd63fdaaca580f3f961",
+      "publishedAtMs": 1793016464460,
       "changelog": [
         "1.0.4: Multi-server VIP (VidLoad) and Moly (VidMoly) dual-stream extraction, inlined WebVTT subtitles, dedicated extractSubtitles handler, and intelligent Original Audio fallback.",
         "1.0.3: Pure JavaScript base64 decoder replacing atob/Buffer for iOS JavaScriptCore compatibility.",
@@ -55,8 +55,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/asyadizi-source-v1.zip",
       "packagePath": "/modules/asyadizi-source-v1.zip",
-      "sha256": "010852311536b8d72b33fdb892480630bf494bb1616d721b9386baba64dc47cf",
-      "publishedAtMs": 1793015172903,
+      "sha256": "70b7aa3cdf4ef8df9b8f41a516f4419c8a9e52ea3f0f8cc3ff87c56c900f1745",
+      "publishedAtMs": 1793016464460,
       "changelog": [
         "1.0.1: Prioritize direct 1080p/720p MP4 streams over HLS for OK.ru to prevent iOS AVPlayer CoreMedia 400 and local proxy 502 errors, broaden episode link pattern matching, and add Under the Queen's Umbrella search alias.",
         "1.0.0: Dedicated AsyaDizi module for K-Dramas and C-Dramas with OK.ru HLS, Mail.ru direct MP4, and multi-source fallback."
@@ -84,8 +84,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/jetfilmizle-source-v1.zip",
       "packagePath": "/modules/jetfilmizle-source-v1.zip",
-      "sha256": "5926b7bc326d79873d62d9f412eb90ca8e6d77e80aa35999be7d69e77805421d",
-      "publishedAtMs": 1793015172903,
+      "sha256": "c51ef3e3ce7be36631c2990915d52663798412299f2c8bfc3e0851b9f314a0d4",
+      "publishedAtMs": 1793016464460,
       "changelog": [
         "1.0.1: Fix iOS fetchv2 response unwrapping, remove URLSearchParams dependency for JavaScriptCore, and ensure valid JSON stream object return on playback errors.",
         "1.0.0: Dedicated JetFilmizle module with direct MP4 (Gold) and adaptive HLS (VIP/Apollo/Titan) playback."
@@ -113,8 +113,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizci-source-v1.zip",
       "packagePath": "/modules/dizci-source-v1.zip",
-      "sha256": "039bd8d5f21c9ebc830c80f0d49b88d7cbec3b5a7571feacef3346c987081530",
-      "publishedAtMs": 1793015172903,
+      "sha256": "3371e1446620bd01235e00d9a181f071348344c75981d19e164d90fe0e632ba4",
+      "publishedAtMs": 1793016464460,
       "changelog": [
         "1.0.1: Prioritize direct progressive MP4 streams for Dzen and OK.ru to prevent iOS AVPlayer HTTP 502/400 errors, parse structured Next.js versions state, and add multi-provider fallback.",
         "1.0.0: Dedicated Dizci module with separate Sub (English original audio) and Dub (Turkish) streams."
@@ -142,8 +142,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/diziyou-source-v1.zip",
       "packagePath": "/modules/diziyou-source-v1.zip",
-      "sha256": "e2864bb361669697ad3d5b0b645f3028fc0561ba2eb8668b3f464faba61768df",
-      "publishedAtMs": 1793015172903,
+      "sha256": "feb9e32b71e5a10b2278287bb24cf7e3a0cf5a2f303c8b41612cd62629c9bb7a",
+      "publishedAtMs": 1793016464460,
       "changelog": [
         "1.0.0: Dedicated Diziyou module with direct adaptive HLS streams in original English audio with Turkish subtitles."
       ],
@@ -170,8 +170,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizimom-source-v1.zip",
       "packagePath": "/modules/dizimom-source-v1.zip",
-      "sha256": "7ba6f1ffa7c7dcc9e215a69ddfbbc15f804aff85511edc358eccbe193f0ce324",
-      "publishedAtMs": 1793015172903,
+      "sha256": "d4472ff586551d32b26037f87b91381543cc0580eca95713dd134f2801bb2589",
+      "publishedAtMs": 1793016464460,
       "changelog": [
         "1.0.0: Dedicated DiziMom module with native iOS AVPlayer multi-audio HLS track switching."
       ],
@@ -198,8 +198,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizigom-source-v1.zip",
       "packagePath": "/modules/dizigom-source-v1.zip",
-      "sha256": "8ec5b2000b062dff0bd5dc58796d7612783fd4f9686e42ab0bde03c053a07a05",
-      "publishedAtMs": 1793015172903,
+      "sha256": "96358dd5d5f9ef6dee2488ac0322f80fcfc685914192a25299a0840de4f3c530",
+      "publishedAtMs": 1793016464460,
       "changelog": [
         "1.0.0: Dedicated Dizigom module with instant autocomplete search, multi-season parser, and inlined Turkish subtitles."
       ],
@@ -226,8 +226,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animland-source-v1.zip",
       "packagePath": "/modules/animland-source-v1.zip",
-      "sha256": "1f596687e05ebe809d8da4b7075be9205448794b225e0026d946e4e150f33f24",
-      "publishedAtMs": 1793015172903,
+      "sha256": "2be8630b1c7258a9b26d7faa041df5c5c66067041e850d39f2a1453487f83d96",
+      "publishedAtMs": 1793016464460,
       "changelog": [
         "1.0.0: Dedicated Animland module with direct 1080p MP4 streams and inlined WebVTT subtitles."
       ],
@@ -254,8 +254,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animeniz-source-v1.zip",
       "packagePath": "/modules/animeniz-source-v1.zip",
-      "sha256": "cd8e46085708ec88ec94b1aff55bb2c54e1d3b445832cfc9c287dc6b1ee525f9",
-      "publishedAtMs": 1793015172903,
+      "sha256": "601743207d9f9d1e6ce06200c5cb83d64b3e235065645ff465af6fa2767cba0d",
+      "publishedAtMs": 1793016464460,
       "changelog": [
         "1.0.0: Dedicated Animeniz module with live Next.js API search and complete flight data episode parser."
       ],
@@ -282,8 +282,8 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/anizm-source-v1.zip",
       "packagePath": "/modules/anizm-source-v1.zip",
-      "sha256": "0f29ec78b85cb468d61dc2fda5ef3b68398eed675959803d8ea26dddb5154931",
-      "publishedAtMs": 1793015172903,
+      "sha256": "6cfefac0fa9a72144c5ac5406ef0e6ce0c711be3d6746459a00eb38fdd0dbc97",
+      "publishedAtMs": 1793016464460,
       "changelog": [
         "1.0.0: Dedicated Anizm module with hardcoded Turkish fansub subtitles burned into direct 1080p MP4 frames."
       ],
@@ -301,5 +301,5 @@
     }
   ],
   "version": "1.0.0",
-  "updatedAt": "2026-10-26T11:46:12.902Z"
+  "updatedAt": "2026-10-26T12:07:44.458Z"
 }

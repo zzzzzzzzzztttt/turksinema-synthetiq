@@ -616,6 +616,10 @@ async function extractStreamUrl(episode, lang) {
 
     for (const ver of orderedVersions) {
       const sources = Array.isArray(ver.sources) ? ver.sources : [];
+      let primaryStream = null;
+      const combinedServers = [];
+      const combinedStreams = [];
+
       for (const src of sources) {
         const provider = String(src.provider || '').toLowerCase();
         const embedUrl = String(src.embedUrl || '');
@@ -630,19 +634,31 @@ async function extractStreamUrl(episode, lang) {
         }
 
         if (stream && stream.url) {
-          const verLabel = ver.language === 'dub' ? 'Dublaj (TR)' : 'Altyazılı (EN)';
-          return {
-            url: stream.url,
-            streamUrl: stream.streamUrl || stream.url,
-            streamType: stream.streamType || 'mp4',
-            format: stream.format || 'mp4',
-            quality: stream.quality || '1080p',
-            headers: stream.headers || {},
-            streams: stream.streams && stream.streams.length > 0 ? stream.streams : [`${stream.quality} ${(stream.format || 'mp4').toUpperCase()}`, stream.url],
-            servers: stream.servers && stream.servers.length > 0 ? stream.servers : [{ name: `Dizci ${stream.serverName} (${verLabel})`, url: stream.url }],
-            subtitles: []
-          };
+          if (!primaryStream) {
+            primaryStream = stream;
+          }
+          if (Array.isArray(stream.servers)) {
+            combinedServers.push(...stream.servers);
+          }
+          if (Array.isArray(stream.streams)) {
+            combinedStreams.push(...stream.streams);
+          }
         }
+      }
+
+      if (primaryStream && primaryStream.url) {
+        const verLabel = ver.language === 'dub' ? 'Dublaj (TR)' : 'Altyazılı (EN)';
+        return {
+          url: primaryStream.url,
+          streamUrl: primaryStream.streamUrl || primaryStream.url,
+          streamType: primaryStream.streamType || 'mp4',
+          format: primaryStream.format || 'mp4',
+          quality: primaryStream.quality || '1080p',
+          headers: primaryStream.headers || {},
+          streams: combinedStreams.length > 0 ? combinedStreams : [`${primaryStream.quality} ${(primaryStream.format || 'mp4').toUpperCase()}`, primaryStream.url],
+          servers: combinedServers.length > 0 ? combinedServers : [{ name: `Dizci ${primaryStream.serverName} (${verLabel})`, url: primaryStream.url }],
+          subtitles: []
+        };
       }
     }
 
