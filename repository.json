@@ -3,7 +3,7 @@
   "repositoryId": "turksinema-synthetiq",
   "name": "TurkSinema Synthetiq Repository",
   "enabled": true,
-  "publishedAtMs": 1793053654328,
+  "publishedAtMs": 1793104304415,
   "bundle": {
     "version": 18,
     "minAppVersion": "8.0.0",
@@ -193,16 +193,16 @@
     {
       "moduleId": "dizigom-source-v1",
       "moduleFamilyId": "dizigom_source_v1",
-      "moduleIdentity": "SP-VID-993-DZGM",
-      "moduleIdentityNumber": 993,
+      "moduleIdentity": "SP-VID-989-DZGM",
+      "moduleIdentityNumber": 989,
       "contentType": "video",
       "version": "1.0.0",
       "moduleVersion": "1.0.0",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizigom-source-v1.zip",
       "packagePath": "/modules/dizigom-source-v1.zip",
-      "sha256": "96358dd5d5f9ef6dee2488ac0322f80fcfc685914192a25299a0840de4f3c530",
-      "publishedAtMs": 1793016464460,
+      "sha256": "7736a46334c496fbf77ac00a261c449d93a3bd1797b25f72fde6d8251164d8cc",
+      "publishedAtMs": 1793104304415,
       "changelog": [
         "1.0.0: Dedicated Dizigom module with instant autocomplete search, multi-season parser, and inlined Turkish subtitles."
       ],
@@ -337,5 +337,5 @@
     }
   ],
   "version": "1.0.0",
-  "updatedAt": "2026-10-26T22:27:34.327Z"
+  "updatedAt": "2026-10-27T12:31:44.405Z"
 }
