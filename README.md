@@ -23,7 +23,8 @@ In compliance with Synthetiq Player's architecture (strict 1 site per module ZIP
 ## 📱 How to Install in Synthetiq Player
 
 ### Option 1: Direct Module Import (Recommended)
-1. On your iPhone, download any or all of the module ZIP files:
+1. On your iPhone, download any or all of the module ZIP files (or the all-in-one bundle):
+   - 📦 **All-in-One Bundle (All 11 Modules):** [turksinema-bundle.zip](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/bundles/turksinema-bundle.zip)
    - [hdfilmcehennemi2-source-v1.zip](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/hdfilmcehennemi2-source-v1.zip)
    - [asyadizi-source-v1.zip](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/asyadizi-source-v1.zip)
    - [jetfilmizle-source-v1.zip](https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/jetfilmizle-source-v1.zip)

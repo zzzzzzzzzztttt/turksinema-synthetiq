@@ -4,8 +4,8 @@
   "repositoryId": "turksinema-synthetiq",
   "name": "TurkSinema Synthetiq Repository",
   "enabled": true,
-  "bundleVersion": 18,
-  "bundleFile": "modules/hdfilmcehennemi2-source-v1.zip",
+  "bundleVersion": 19,
+  "bundleFile": "bundles/turksinema-bundle.zip",
   "minAppVersion": "8.0.0",
   "modules": [
     {
@@ -203,9 +203,9 @@
       "releaseTrack": "stable",
       "file": "modules/dizigom-source-v1.zip",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizigom-source-v1.zip",
-      "sha256": "7736a46334c496fbf77ac00a261c449d93a3bd1797b25f72fde6d8251164d8cc",
-      "publishedAt": "2026-10-27T12:31:44.405Z",
-      "publishedAtMs": 1793104304415,
+      "sha256": "794650ff3873055b40fe7b8c508a307e16d2880fb4ab979513526bb55b92c4b9",
+      "publishedAt": "2026-10-27T12:56:20.888Z",
+      "publishedAtMs": 1793105780889,
       "presentation": {
         "category": "Movies & TV",
         "purpose": "Turkish & Global Series, Asian Dramas & Movies with Dual Audio & Inlined WebVTT Subtitles",

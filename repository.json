@@ -3,13 +3,12 @@
   "repositoryId": "turksinema-synthetiq",
   "name": "TurkSinema Synthetiq Repository",
   "enabled": true,
-  "publishedAtMs": 1793104304415,
+  "publishedAtMs": 1793105780889,
   "bundle": {
-    "version": 18,
+    "version": 19,
     "minAppVersion": "8.0.0",
-    "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/hdfilmcehennemi2-source-v1.zip",
-    "packagePath": "/modules/hdfilmcehennemi2-source-v1.zip",
-    "sha256": "e0599c36a302df0194171acf604a66ff11f708b5136f701d94bdc20b817fcd3b"
+    "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/bundles/turksinema-bundle.zip",
+    "sha256": "721f4116a95bdb3afc01a8d77f8c9feff573136a48d5cadd79cc8204bf5b41e9"
   },
   "modules": [
     {
@@ -22,7 +21,6 @@
       "moduleVersion": "1.0.5",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/hdfilmcehennemi2-source-v1.zip",
-      "packagePath": "/modules/hdfilmcehennemi2-source-v1.zip",
       "sha256": "e0599c36a302df0194171acf604a66ff11f708b5136f701d94bdc20b817fcd3b",
       "publishedAtMs": 1793025739603,
       "changelog": [
@@ -55,7 +53,6 @@
       "moduleVersion": "1.0.1",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/asyadizi-source-v1.zip",
-      "packagePath": "/modules/asyadizi-source-v1.zip",
       "sha256": "70b7aa3cdf4ef8df9b8f41a516f4419c8a9e52ea3f0f8cc3ff87c56c900f1745",
       "publishedAtMs": 1793016464460,
       "changelog": [
@@ -84,7 +81,6 @@
       "moduleVersion": "1.0.1",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/jetfilmizle-source-v1.zip",
-      "packagePath": "/modules/jetfilmizle-source-v1.zip",
       "sha256": "c51ef3e3ce7be36631c2990915d52663798412299f2c8bfc3e0851b9f314a0d4",
       "publishedAtMs": 1793016464460,
       "changelog": [
@@ -113,7 +109,6 @@
       "moduleVersion": "1.0.3",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizci-source-v1.zip",
-      "packagePath": "/modules/dizci-source-v1.zip",
       "sha256": "1c69f88c2f7128d55d273a2b7a2ae3888ccb97b5a7bbb57aa2ff480ece324f0e",
       "publishedAtMs": 1793038892149,
       "changelog": [
@@ -144,7 +139,6 @@
       "moduleVersion": "1.0.0",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/diziyou-source-v1.zip",
-      "packagePath": "/modules/diziyou-source-v1.zip",
       "sha256": "feb9e32b71e5a10b2278287bb24cf7e3a0cf5a2f303c8b41612cd62629c9bb7a",
       "publishedAtMs": 1793016464460,
       "changelog": [
@@ -172,7 +166,6 @@
       "moduleVersion": "1.0.0",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizimom-source-v1.zip",
-      "packagePath": "/modules/dizimom-source-v1.zip",
       "sha256": "d4472ff586551d32b26037f87b91381543cc0580eca95713dd134f2801bb2589",
       "publishedAtMs": 1793016464460,
       "changelog": [
@@ -200,9 +193,8 @@
       "moduleVersion": "1.0.0",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizigom-source-v1.zip",
-      "packagePath": "/modules/dizigom-source-v1.zip",
-      "sha256": "7736a46334c496fbf77ac00a261c449d93a3bd1797b25f72fde6d8251164d8cc",
-      "publishedAtMs": 1793104304415,
+      "sha256": "794650ff3873055b40fe7b8c508a307e16d2880fb4ab979513526bb55b92c4b9",
+      "publishedAtMs": 1793105780889,
       "changelog": [
         "1.0.0: Dedicated Dizigom module with instant autocomplete search, multi-season parser, and inlined Turkish subtitles."
       ],
@@ -228,7 +220,6 @@
       "moduleVersion": "1.0.0",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animland-source-v1.zip",
-      "packagePath": "/modules/animland-source-v1.zip",
       "sha256": "2be8630b1c7258a9b26d7faa041df5c5c66067041e850d39f2a1453487f83d96",
       "publishedAtMs": 1793016464460,
       "changelog": [
@@ -256,7 +247,6 @@
       "moduleVersion": "1.0.0",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animeniz-source-v1.zip",
-      "packagePath": "/modules/animeniz-source-v1.zip",
       "sha256": "601743207d9f9d1e6ce06200c5cb83d64b3e235065645ff465af6fa2767cba0d",
       "publishedAtMs": 1793016464460,
       "changelog": [
@@ -284,7 +274,6 @@
       "moduleVersion": "1.0.3",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/anizm-source-v1.zip",
-      "packagePath": "/modules/anizm-source-v1.zip",
       "sha256": "048c8e0c5a574305d7af0f3bf01860e9796e58993d659acf398bdc6347f9b430",
       "publishedAtMs": 1793053613587,
       "changelog": [
@@ -315,7 +304,6 @@
       "moduleVersion": "1.0.2",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/filmmakinesi-source-v1.zip",
-      "packagePath": "/modules/filmmakinesi-source-v1.zip",
       "sha256": "804befb75e7ef2bc1e5c34a448943491615a4a74ef1e92fbbbf0089f87438ecd",
       "publishedAtMs": 1793053654328,
       "changelog": [
@@ -337,5 +325,5 @@
     }
   ],
   "version": "1.0.0",
-  "updatedAt": "2026-10-27T12:31:44.405Z"
+  "updatedAt": "2026-10-27T12:56:20.888Z"
 }
