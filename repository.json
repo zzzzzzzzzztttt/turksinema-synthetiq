@@ -3,12 +3,14 @@
   "repositoryId": "turksinema-synthetiq",
   "name": "TurkSinema Synthetiq Repository",
   "enabled": true,
-  "publishedAtMs": 1793105780889,
+  "publishedAtMs": 1793106900848,
   "bundle": {
     "version": 19,
     "minAppVersion": "8.0.0",
     "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/bundles/turksinema-bundle.zip",
-    "sha256": "721f4116a95bdb3afc01a8d77f8c9feff573136a48d5cadd79cc8204bf5b41e9"
+    "packagePath": "/bundles/turksinema-bundle.zip",
+    "sha256": "f91b7f33e76046a9ee0c21cee52fd898cf87e2cad701c95ff4d65d53c55b36de",
+    "signature": "qzv7KRV9yxwzme/TxgGfkQVqpp7e0fPRStWFFAG3+BGV2i3/FmaywRvwWHxKFZk8MdQAX7WgyXDF1ggI6uGgYQ=="
   },
   "modules": [
     {
@@ -21,7 +23,9 @@
       "moduleVersion": "1.0.5",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/hdfilmcehennemi2-source-v1.zip",
+      "packagePath": "/modules/hdfilmcehennemi2-source-v1.zip",
       "sha256": "e0599c36a302df0194171acf604a66ff11f708b5136f701d94bdc20b817fcd3b",
+      "signature": "JMo9Usl7juNdNJaqiJpxtAFsDpcyBJ97aX35WYu2KKe0bn0joz2J5MOpjFkcg8jTlrU62Z4+OOXAAvXrAx3dCA==",
       "publishedAtMs": 1793025739603,
       "changelog": [
         "1.0.5: Prevent 2MB iOS JSON buffer truncation by deduplicating subtitle tracks, optimizing VTT inline budget, and removing redundant subtitles array from server entries.",
@@ -53,7 +57,9 @@
       "moduleVersion": "1.0.1",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/asyadizi-source-v1.zip",
+      "packagePath": "/modules/asyadizi-source-v1.zip",
       "sha256": "70b7aa3cdf4ef8df9b8f41a516f4419c8a9e52ea3f0f8cc3ff87c56c900f1745",
+      "signature": "s1P1WUPQkwwxcT3WaTC1cPNNtGRSUEvkAG+PY6Dm/AJg9dzdSQW2WooMX3kazEKdTawjEnUWnaEd5MCMlcDiCQ==",
       "publishedAtMs": 1793016464460,
       "changelog": [
         "1.0.1: Prioritize direct 1080p/720p MP4 streams over HLS for OK.ru to prevent iOS AVPlayer CoreMedia 400 and local proxy 502 errors, broaden episode link pattern matching, and add Under the Queen's Umbrella search alias.",
@@ -81,7 +87,9 @@
       "moduleVersion": "1.0.1",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/jetfilmizle-source-v1.zip",
+      "packagePath": "/modules/jetfilmizle-source-v1.zip",
       "sha256": "c51ef3e3ce7be36631c2990915d52663798412299f2c8bfc3e0851b9f314a0d4",
+      "signature": "1+3Ynq51VZcNrtsbb+MrTv7jNacCLfSJgPHd2W1cPKoI0cfk25yJMpf76H80GnSxeDx8WIh7Jq6am5z6UkynPA==",
       "publishedAtMs": 1793016464460,
       "changelog": [
         "1.0.1: Fix iOS fetchv2 response unwrapping, remove URLSearchParams dependency for JavaScriptCore, and ensure valid JSON stream object return on playback errors.",
@@ -109,7 +117,9 @@
       "moduleVersion": "1.0.3",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizci-source-v1.zip",
+      "packagePath": "/modules/dizci-source-v1.zip",
       "sha256": "1c69f88c2f7128d55d273a2b7a2ae3888ccb97b5a7bbb57aa2ff480ece324f0e",
+      "signature": "JaYd3XFCQMG/M9VWEJ1DcSLaN5sToPzX9Rxw4Oi8ethgXCF5CTTd2NPTvaFPB54qm+yFqFlVKnslzbGBq/USSA==",
       "publishedAtMs": 1793038892149,
       "changelog": [
         "1.0.3: Explicitly bind season-local number property on episode objects to prevent app from displaying cumulative series episode index (e.g. S5E55 -> S5E3).",
@@ -139,7 +149,9 @@
       "moduleVersion": "1.0.0",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/diziyou-source-v1.zip",
+      "packagePath": "/modules/diziyou-source-v1.zip",
       "sha256": "feb9e32b71e5a10b2278287bb24cf7e3a0cf5a2f303c8b41612cd62629c9bb7a",
+      "signature": "IdbECiNCzTLfQQY4WJcfGA1sjPqqYp38L4nO/de4jxWlYDD0JNFC3A8VZgGtA8HwRmO/wPw7r3bs3JDU0vWryQ==",
       "publishedAtMs": 1793016464460,
       "changelog": [
         "1.0.0: Dedicated Diziyou module with direct adaptive HLS streams in original English audio with Turkish subtitles."
@@ -166,7 +178,9 @@
       "moduleVersion": "1.0.0",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizimom-source-v1.zip",
+      "packagePath": "/modules/dizimom-source-v1.zip",
       "sha256": "d4472ff586551d32b26037f87b91381543cc0580eca95713dd134f2801bb2589",
+      "signature": "VCxUqI6WZQ8sLqt0AbMbE5gqHngxWXNRXWUVEO1Nr+wNAUJOFU3ZDROvioII5koGFaPlc/Fch3CNXPE7E+ggxw==",
       "publishedAtMs": 1793016464460,
       "changelog": [
         "1.0.0: Dedicated DiziMom module with native iOS AVPlayer multi-audio HLS track switching."
@@ -193,8 +207,10 @@
       "moduleVersion": "1.0.0",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizigom-source-v1.zip",
-      "sha256": "794650ff3873055b40fe7b8c508a307e16d2880fb4ab979513526bb55b92c4b9",
-      "publishedAtMs": 1793105780889,
+      "packagePath": "/modules/dizigom-source-v1.zip",
+      "sha256": "b2c3f5150665b0fc6369e31ad8604be0c3548b810593d1dbcdc999b6611e3cc4",
+      "signature": "OmwpZeE5Oo56pVsRxFnwtsiAbbz65hIO9EMsruhFJ5TDQjtUI909yRFX0rKR8v9FuKqG0I0djrffbuH6PolB8g==",
+      "publishedAtMs": 1793106900848,
       "changelog": [
         "1.0.0: Dedicated Dizigom module with instant autocomplete search, multi-season parser, and inlined Turkish subtitles."
       ],
@@ -220,7 +236,9 @@
       "moduleVersion": "1.0.0",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animland-source-v1.zip",
+      "packagePath": "/modules/animland-source-v1.zip",
       "sha256": "2be8630b1c7258a9b26d7faa041df5c5c66067041e850d39f2a1453487f83d96",
+      "signature": "NsJxpQnxOwjcBqIB1dtk/DzI6BIDldl8/9ALw1oN0kbLkYH2UGL2HxrnGoEH4+cQaGQ5Ucp+G4kCK6zqaXGRHg==",
       "publishedAtMs": 1793016464460,
       "changelog": [
         "1.0.0: Dedicated Animland module with direct 1080p MP4 streams and inlined WebVTT subtitles."
@@ -247,7 +265,9 @@
       "moduleVersion": "1.0.0",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animeniz-source-v1.zip",
+      "packagePath": "/modules/animeniz-source-v1.zip",
       "sha256": "601743207d9f9d1e6ce06200c5cb83d64b3e235065645ff465af6fa2767cba0d",
+      "signature": "5toCFZihy0rYZ+VB4vDMLX1i0JFNyC7xYnAqen3moZ0fOR9QeqeHRY9PX4Q+tgKcTUY1ez5YfqOG4PoLdLewqQ==",
       "publishedAtMs": 1793016464460,
       "changelog": [
         "1.0.0: Dedicated Animeniz module with live Next.js API search and complete flight data episode parser."
@@ -274,7 +294,9 @@
       "moduleVersion": "1.0.3",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/anizm-source-v1.zip",
+      "packagePath": "/modules/anizm-source-v1.zip",
       "sha256": "048c8e0c5a574305d7af0f3bf01860e9796e58993d659acf398bdc6347f9b430",
+      "signature": "vhnAYduxfiEF4ioAV3F+jBGiE2hT4qhKudGL7H754bloc5+DkJmWt8gO8kzK/dcJDUZ8EyoSGuF/GbL2WxFssA==",
       "publishedAtMs": 1793053613587,
       "changelog": [
         "1.0.3: Clean episode title extraction isolating v3-anime-episode-grid and strong tags, eliminating messy concatenated catalog text and header action buttons.",
@@ -304,7 +326,9 @@
       "moduleVersion": "1.0.2",
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/filmmakinesi-source-v1.zip",
+      "packagePath": "/modules/filmmakinesi-source-v1.zip",
       "sha256": "804befb75e7ef2bc1e5c34a448943491615a4a74ef1e92fbbbf0089f87438ecd",
+      "signature": "LSxka6xpJfHD5al0bMI0c7/MMHJ4DSyAk2dD1VGt+qwJ6CmcDN9RD9V4basUQcD76CeingCwNnKaShpxp3ZjAw==",
       "publishedAtMs": 1793053654328,
       "changelog": [
         "1.0.2: Fix broken search and discovery thumbnails by dynamically matching unblocked, high-resolution Amazon and Metahub posters via Cinemeta and IMDb ID indexing, update module icon to unblocked Google Favicon CDN.",
@@ -324,6 +348,7 @@
       }
     }
   ],
+  "signature": "ygY/IHK8c+5p2QGZP3CwuzGPMwOM2BdnyOBnvxvbjMDqJZjlDQicIYj3U+WnsYZCSl3EBBg1wis4iWuBzkmvHw==",
   "version": "1.0.0",
-  "updatedAt": "2026-10-27T12:56:20.888Z"
+  "updatedAt": "2026-10-27T13:15:00.847Z"
 }
