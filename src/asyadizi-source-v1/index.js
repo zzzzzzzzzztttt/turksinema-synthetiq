@@ -668,7 +668,7 @@ async function extractSubtitles() {
 async function discoveryHome() {
   try {
     const html = await httpGet(BASE_URL + '/');
-    if (!html) return [];
+    if (!html) return { sections: [] };
 
     const items = [];
     const seen = new Set();
@@ -696,25 +696,49 @@ async function discoveryHome() {
         href,
         image: poster,
         poster,
-        posterUrl: poster,
+        coverUrl: poster,
+        backdrop: poster,
         isSeries: true,
-        type: 'tv'
+        type: 'tv',
+        badge: 'K-Drama'
       });
     }
 
     const sections = [];
     if (items.length > 0) {
+      // 1. Hero Carousel
       sections.push({
-        id: 'asyadizi_popular',
+        id: 'asyadizi-hero',
         title: 'Öne Çıkan Asya Dizileri',
-        type: 'featured',
-        items: items.slice(0, 30)
+        style: 'hero',
+        items: items.slice(0, 6),
+        viewAll: { mode: 'feed', feedId: 'hero' }
+      });
+
+      // 2. Top 10 Shelf
+      if (items.length >= 10) {
+        sections.push({
+          id: 'asyadizi-top10',
+          title: 'En Çok İzlenen 10 Dizi',
+          style: 'top10',
+          items: items.slice(0, 10),
+          viewAll: { mode: 'feed', feedId: 'top10' }
+        });
+      }
+
+      // 3. Regular Poster Shelf
+      sections.push({
+        id: 'asyadizi-latest',
+        title: 'Trend Kore & Asya Dizileri',
+        style: 'poster',
+        items: items.slice(0, 30),
+        viewAll: { mode: 'feed', feedId: 'latest' }
       });
     }
 
-    return sections;
+    return { sections };
   } catch (_) {
-    return [];
+    return { sections: [] };
   }
 }
 
@@ -724,10 +748,17 @@ async function discoveryHome() {
 async function discoveryFeed(feedId, page = 1) {
   try {
     const home = await discoveryHome();
-    const section = home.find(s => s.id === feedId) || home[0];
-    return section ? section.items : [];
+    const sections = Array.isArray(home && home.sections) ? home.sections : [];
+    const id = String(feedId || '').toLowerCase();
+    const section = sections.find(s => s.id === id || s.id.includes(id)) || sections[0];
+    const items = section ? section.items : [];
+    return {
+      items: items,
+      page: Number(page) || 1,
+      hasMore: false
+    };
   } catch (_) {
-    return [];
+    return { items: [], page: 1, hasMore: false };
   }
 }
 

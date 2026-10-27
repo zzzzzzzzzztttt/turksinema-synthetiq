@@ -4,7 +4,7 @@
   "repositoryId": "turksinema-synthetiq",
   "name": "TurkSinema Synthetiq Repository",
   "enabled": true,
-  "bundleVersion": 19,
+  "bundleVersion": 20,
   "bundleFile": "bundles/turksinema-bundle.zip",
   "minAppVersion": "8.0.0",
   "modules": [
@@ -14,14 +14,14 @@
       "moduleIdentity": "SP-VID-999-HDC2",
       "moduleIdentityNumber": 999,
       "contentType": "video",
-      "version": "1.0.5",
-      "moduleVersion": "1.0.5",
+      "version": "1.0.6",
+      "moduleVersion": "1.0.6",
       "releaseTrack": "stable",
       "file": "modules/hdfilmcehennemi2-source-v1.zip",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/hdfilmcehennemi2-source-v1.zip",
-      "sha256": "e0599c36a302df0194171acf604a66ff11f708b5136f701d94bdc20b817fcd3b",
-      "publishedAt": "2026-10-26T14:42:19.602Z",
-      "publishedAtMs": 1793025739603,
+      "sha256": "8e71bcf32f228c010ae2adfae5c12c28cbd7209369840bc2f2e041886468fd87",
+      "publishedAt": "2026-10-27T15:19:10.721Z",
+      "publishedAtMs": 1793114350722,
       "presentation": {
         "category": "Movies & TV",
         "purpose": "Movies & Series with Dedicated Original Audio (Altyazılı) and Turkish Dub Streams via VIP & VidMoly",
@@ -34,6 +34,7 @@
         "iconUrl": "https://www.google.com/s2/favicons?domain=hdfilmcehennemi2.biz&sz=128"
       },
       "changelog": [
+        "1.0.6: Vibrant multi-shelf Home tab with Hero carousel, Top 10 rankings, and categorised movie rows.",
         "1.0.5: Prevent 2MB iOS JSON buffer truncation by deduplicating subtitle tracks, optimizing VTT inline budget, and removing redundant subtitles array from server entries.",
         "1.0.4: Multi-server VIP (VidLoad) and Moly (VidMoly) dual-stream extraction, inlined WebVTT subtitles, dedicated extractSubtitles handler, and intelligent Original Audio fallback.",
         "1.0.3: Pure JavaScript base64 decoder replacing atob/Buffer for iOS JavaScriptCore compatibility.",
@@ -48,14 +49,14 @@
       "moduleIdentity": "SP-VID-993-ASYD",
       "moduleIdentityNumber": 993,
       "contentType": "video",
-      "version": "1.0.1",
-      "moduleVersion": "1.0.1",
+      "version": "1.0.2",
+      "moduleVersion": "1.0.2",
       "releaseTrack": "stable",
       "file": "modules/asyadizi-source-v1.zip",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/asyadizi-source-v1.zip",
-      "sha256": "70b7aa3cdf4ef8df9b8f41a516f4419c8a9e52ea3f0f8cc3ff87c56c900f1745",
-      "publishedAt": "2026-10-26T12:07:44.458Z",
-      "publishedAtMs": 1793016464460,
+      "sha256": "d6d7ed49a51dac07c56ba05fc618ae3845e9f50941da8b7ae23e46f9e272e68a",
+      "publishedAt": "2026-10-27T15:19:10.721Z",
+      "publishedAtMs": 1793114350722,
       "presentation": {
         "category": "Asian Dramas",
         "purpose": "Korean, Chinese & Asian Dramas with High-Speed HLS & Direct MP4 Playback (AsyaDizi)",
@@ -68,6 +69,7 @@
         "iconUrl": "https://www.google.com/s2/favicons?domain=asyadizi.com&sz=128"
       },
       "changelog": [
+        "1.0.2: Vibrant multi-shelf Home tab with Hero carousel, Top 10 Asian Dramas, and trending K-Drama shelves.",
         "1.0.1: Prioritize direct 1080p/720p MP4 streams over HLS for OK.ru to prevent iOS AVPlayer CoreMedia 400 and local proxy 502 errors, broaden episode link pattern matching, and add Under the Queen's Umbrella search alias.",
         "1.0.0: Dedicated AsyaDizi module for K-Dramas and C-Dramas with OK.ru HLS, Mail.ru direct MP4, and multi-source fallback."
       ]
@@ -78,14 +80,14 @@
       "moduleIdentity": "SP-VID-995-JETF",
       "moduleIdentityNumber": 995,
       "contentType": "video",
-      "version": "1.0.1",
-      "moduleVersion": "1.0.1",
+      "version": "1.0.2",
+      "moduleVersion": "1.0.2",
       "releaseTrack": "stable",
       "file": "modules/jetfilmizle-source-v1.zip",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/jetfilmizle-source-v1.zip",
-      "sha256": "c51ef3e3ce7be36631c2990915d52663798412299f2c8bfc3e0851b9f314a0d4",
-      "publishedAt": "2026-10-26T12:07:44.458Z",
-      "publishedAtMs": 1793016464460,
+      "sha256": "0f14d57551065dfd9cf61c21eef9ed959cbc7e70d1248e12d4df1f29e40d63e3",
+      "publishedAt": "2026-10-27T15:19:10.721Z",
+      "publishedAtMs": 1793114350722,
       "presentation": {
         "category": "Movies & TV",
         "purpose": "Movies & Series with Direct MP4 & Adaptive HLS Streams (JetFilmizle)",
@@ -98,6 +100,7 @@
         "iconUrl": "https://www.google.com/s2/favicons?domain=jetfilmizle.app&sz=128"
       },
       "changelog": [
+        "1.0.2: Vibrant multi-shelf Home tab with Hero carousel, Top 10 movies, and fresh cinema shelves.",
         "1.0.1: Fix iOS fetchv2 response unwrapping, remove URLSearchParams dependency for JavaScriptCore, and ensure valid JSON stream object return on playback errors.",
         "1.0.0: Dedicated JetFilmizle module with direct MP4 (Gold) and adaptive HLS (VIP/Apollo/Titan) playback."
       ]
@@ -108,14 +111,14 @@
       "moduleIdentity": "SP-VID-997-DZCI",
       "moduleIdentityNumber": 997,
       "contentType": "video",
-      "version": "1.0.3",
-      "moduleVersion": "1.0.3",
+      "version": "1.0.4",
+      "moduleVersion": "1.0.4",
       "releaseTrack": "stable",
       "file": "modules/dizci-source-v1.zip",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizci-source-v1.zip",
-      "sha256": "1c69f88c2f7128d55d273a2b7a2ae3888ccb97b5a7bbb57aa2ff480ece324f0e",
-      "publishedAt": "2026-10-26T18:21:32.148Z",
-      "publishedAtMs": 1793038892149,
+      "sha256": "599f8e38760f2085fa6dd994c602a150d422fd0a3ca6c0ce944b8916c98387c0",
+      "publishedAt": "2026-10-27T15:19:10.721Z",
+      "publishedAtMs": 1793114350722,
       "presentation": {
         "category": "Movies & TV",
         "purpose": "Western Movies & Series with Dedicated English Audio (Altyazılı) and Turkish Dub Streams",
@@ -128,6 +131,7 @@
         "iconUrl": "https://www.google.com/s2/favicons?domain=dizci.net&sz=128"
       },
       "changelog": [
+        "1.0.4: Vibrant multi-shelf Home tab with Hero carousel, Top 10 rankings, and separated Series & Movies shelves.",
         "1.0.3: Explicitly bind season-local number property on episode objects to prevent app from displaying cumulative series episode index (e.g. S5E55 -> S5E3).",
         "1.0.2: Add VK (VKontakte) 1080p video resolver supporting okcdn.ru direct streams, and parse authentic episode titles with accurate sub/dub language badges from episode cards.",
         "1.0.1: Prioritize direct progressive MP4 streams for Dzen and OK.ru to prevent iOS AVPlayer HTTP 502/400 errors, parse structured Next.js versions state, and add multi-provider fallback.",
@@ -140,14 +144,14 @@
       "moduleIdentity": "SP-VID-998-DZYU",
       "moduleIdentityNumber": 998,
       "contentType": "video",
-      "version": "1.0.0",
-      "moduleVersion": "1.0.0",
+      "version": "1.0.1",
+      "moduleVersion": "1.0.1",
       "releaseTrack": "stable",
       "file": "modules/diziyou-source-v1.zip",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/diziyou-source-v1.zip",
-      "sha256": "feb9e32b71e5a10b2278287bb24cf7e3a0cf5a2f303c8b41612cd62629c9bb7a",
-      "publishedAt": "2026-10-26T12:07:44.458Z",
-      "publishedAtMs": 1793016464460,
+      "sha256": "f3a4aeb371b136ade9daf20f37ab6cb33594a7ad0036f113f5e4bc82e7e43603",
+      "publishedAt": "2026-10-27T15:19:10.721Z",
+      "publishedAtMs": 1793114350722,
       "presentation": {
         "category": "Movies & TV",
         "purpose": "Popular Foreign TV Series with Clean English Audio and Hardcoded Turkish Subtitles",
@@ -160,6 +164,7 @@
         "iconUrl": "https://www.google.com/s2/favicons?domain=diziyou.one&sz=128"
       },
       "changelog": [
+        "1.0.1: Vibrant multi-shelf Home tab with Hero carousel, Top 10 series, and latest episode shelves.",
         "1.0.0: Dedicated Diziyou module with direct adaptive HLS streams in original English audio with Turkish subtitles."
       ]
     },
@@ -169,14 +174,14 @@
       "moduleIdentity": "SP-VID-991-DZMM",
       "moduleIdentityNumber": 991,
       "contentType": "video",
-      "version": "1.0.0",
-      "moduleVersion": "1.0.0",
+      "version": "1.0.1",
+      "moduleVersion": "1.0.1",
       "releaseTrack": "stable",
       "file": "modules/dizimom-source-v1.zip",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizimom-source-v1.zip",
-      "sha256": "d4472ff586551d32b26037f87b91381543cc0580eca95713dd134f2801bb2589",
-      "publishedAt": "2026-10-26T12:07:44.458Z",
-      "publishedAtMs": 1793016464460,
+      "sha256": "1bc502aec29047c628fbf6956fa003c3d02657e6d617cf08b54ea7179541e811",
+      "publishedAt": "2026-10-27T15:19:10.721Z",
+      "publishedAtMs": 1793114350722,
       "presentation": {
         "category": "Movies & TV",
         "purpose": "Turkish Movies & Series with Dual Audio (TR Dub / EN Sub)",
@@ -189,6 +194,7 @@
         "iconUrl": "https://www.google.com/s2/favicons?domain=ddizimom.net&sz=128"
       },
       "changelog": [
+        "1.0.1: Vibrant multi-shelf Home tab with Hero carousel, Top 10 rankings, and trend series/movie shelves.",
         "1.0.0: Dedicated DiziMom module with native iOS AVPlayer multi-audio HLS track switching."
       ]
     },
@@ -198,14 +204,14 @@
       "moduleIdentity": "SP-VID-989-DZGM",
       "moduleIdentityNumber": 989,
       "contentType": "video",
-      "version": "1.0.0",
-      "moduleVersion": "1.0.0",
+      "version": "1.0.1",
+      "moduleVersion": "1.0.1",
       "releaseTrack": "stable",
       "file": "modules/dizigom-source-v1.zip",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizigom-source-v1.zip",
-      "sha256": "dfb9e4c3dafcabee625698d39a297071f19a4a371604047db48e96db17b27ba7",
-      "publishedAt": "2026-10-27T13:32:20.246Z",
-      "publishedAtMs": 1793107940247,
+      "sha256": "0f2c4a209ecf928f93a584007c2fc41030e2157ae840bdc437a2b39e27a0802e",
+      "publishedAt": "2026-10-27T15:19:10.721Z",
+      "publishedAtMs": 1793114350722,
       "presentation": {
         "category": "Movies & TV",
         "purpose": "Turkish & Global Series, Asian Dramas & Movies with Dual Audio & Inlined WebVTT Subtitles",
@@ -218,36 +224,8 @@
         "iconUrl": "https://www.google.com/s2/favicons?domain=dizigom3.top&sz=128"
       },
       "changelog": [
-        "1.0.0: Dedicated Dizigom module with instant autocomplete search, multi-season parser, and inlined Turkish subtitles."
-      ]
-    },
-    {
-      "moduleId": "animland-source-v1",
-      "moduleFamilyId": "animland_source_v1",
-      "moduleIdentity": "SP-VID-992-ANML",
-      "moduleIdentityNumber": 992,
-      "contentType": "video",
-      "version": "1.0.0",
-      "moduleVersion": "1.0.0",
-      "releaseTrack": "stable",
-      "file": "modules/animland-source-v1.zip",
-      "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animland-source-v1.zip",
-      "sha256": "2be8630b1c7258a9b26d7faa041df5c5c66067041e850d39f2a1453487f83d96",
-      "publishedAt": "2026-10-26T12:07:44.458Z",
-      "publishedAtMs": 1793016464460,
-      "presentation": {
-        "category": "Anime",
-        "purpose": "Turkish & Subbed Anime in 1080p MP4 with Inlined WebVTT Subtitles",
-        "recommended": true,
-        "language": "Turkish Sub/Dub",
-        "languages": [
-          "sub",
-          "dub"
-        ],
-        "iconUrl": "https://www.google.com/s2/favicons?domain=animland.net&sz=128"
-      },
-      "changelog": [
-        "1.0.0: Dedicated Animland module with direct 1080p MP4 streams and inlined WebVTT subtitles."
+        "1.0.1: Vibrant multi-shelf Home tab with Hero carousel, Top 10 rankings, and trending foreign series shelves.",
+        "1.0.0: Dedicated Dizigom module with switchable Dub/Sub dual audio and inlined WebVTT subtitles."
       ]
     },
     {
@@ -256,17 +234,17 @@
       "moduleIdentity": "SP-VID-996-ANMZ",
       "moduleIdentityNumber": 996,
       "contentType": "video",
-      "version": "1.0.0",
-      "moduleVersion": "1.0.0",
+      "version": "1.0.2",
+      "moduleVersion": "1.0.2",
       "releaseTrack": "stable",
       "file": "modules/animeniz-source-v1.zip",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animeniz-source-v1.zip",
-      "sha256": "601743207d9f9d1e6ce06200c5cb83d64b3e235065645ff465af6fa2767cba0d",
-      "publishedAt": "2026-10-26T12:07:44.458Z",
-      "publishedAtMs": 1793016464460,
+      "sha256": "718490c1dc75b9712566af14f79241b32c4302dace5c95c518fe398691041bec",
+      "publishedAt": "2026-10-27T15:19:10.721Z",
+      "publishedAtMs": 1793114350722,
       "presentation": {
         "category": "Anime",
-        "purpose": "Turkish Subbed Anime with Direct 1080p MP4 Streams and Full Episode Extraction",
+        "purpose": "Turkish Subbed Anime with Direct 1080p MP4 Streams (No P2P / Turnstile)",
         "recommended": true,
         "language": "Turkish Sub/Dub",
         "languages": [
@@ -276,38 +254,71 @@
         "iconUrl": "https://www.google.com/s2/favicons?domain=animeniz.com&sz=128"
       },
       "changelog": [
-        "1.0.0: Dedicated Animeniz module with live Next.js API search and complete flight data episode parser."
+        "1.0.2: Vibrant multi-shelf Home discovery with Hero backdrop carousel, Top 10 anime, and categorized shelves for Action, Sci-Fi, Comedy, Drama, and Top Rated.",
+        "1.0.1: Add multi-shelf discovery home feed.",
+        "1.0.0: Direct 1080p MP4 CDN streams with multi-episode Next.js flight data extraction."
       ]
     },
     {
-      "moduleId": "anizm-source-v1",
-      "moduleFamilyId": "anizm_source_v1",
-      "moduleIdentity": "SP-VID-994-ANZM",
+      "moduleId": "animland-source-v1",
+      "moduleFamilyId": "animland_source_v1",
+      "moduleIdentity": "SP-VID-994-ANML",
       "moduleIdentityNumber": 994,
       "contentType": "video",
-      "version": "1.0.3",
-      "moduleVersion": "1.0.3",
+      "version": "1.0.1",
+      "moduleVersion": "1.0.1",
       "releaseTrack": "stable",
-      "file": "modules/anizm-source-v1.zip",
-      "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/anizm-source-v1.zip",
-      "sha256": "048c8e0c5a574305d7af0f3bf01860e9796e58993d659acf398bdc6347f9b430",
-      "publishedAt": "2026-10-26T22:26:53.586Z",
-      "publishedAtMs": 1793053613587,
+      "file": "modules/animland-source-v1.zip",
+      "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animland-source-v1.zip",
+      "sha256": "bdec3aa5a0311fc0343a8793565bc28a778ff646cc2e59239c89fc250996934e",
+      "publishedAt": "2026-10-27T15:19:10.721Z",
+      "publishedAtMs": 1793114350722,
       "presentation": {
         "category": "Anime",
-        "purpose": "Turkish Anime with Multi-Translator & Multi-Source Playback (Aincrad Master HLS, YourUpload, SendVid, Vidmoly)",
+        "purpose": "Turkish Subbed Anime with Sibnet Direct MP4 & GDrive Streams",
         "recommended": true,
         "language": "Turkish Sub/Dub",
         "languages": [
           "sub",
           "dub"
         ],
-        "iconUrl": "https://www.google.com/s2/favicons?domain=anizm.com.tr&sz=128"
+        "iconUrl": "https://www.google.com/s2/favicons?domain=animland.net&sz=128"
       },
       "changelog": [
-        "1.0.3: Clean episode title extraction isolating v3-anime-episode-grid and strong tags, eliminating messy concatenated catalog text and header action buttons.",
-        "1.0.2: Fix audio loss on demuxed HLS streams by binding master HLS playlist with full audio track synchronization, and populate direct playable URLs on all resolved servers in the Server Tab.",
-        "1.0.1: Multi-translator and multi-source resolution (Aincrad HLS, YourUpload MP4, SendVid MP4, Vidmoly HLS), safe Dean Edwards unpacker, and structured Season/Special episode indexing.",
+        "1.0.1: Vibrant multi-shelf Home tab with Hero carousel, Top 10 rankings, and new releases.",
+        "1.0.0: Dedicated Animland module with Sibnet direct progressive MP4 streams."
+      ]
+    },
+    {
+      "moduleId": "anizm-source-v1",
+      "moduleFamilyId": "anizm_source_v1",
+      "moduleIdentity": "SP-VID-992-ANZM",
+      "moduleIdentityNumber": 992,
+      "contentType": "video",
+      "version": "1.0.4",
+      "moduleVersion": "1.0.4",
+      "releaseTrack": "stable",
+      "file": "modules/anizm-source-v1.zip",
+      "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/anizm-source-v1.zip",
+      "sha256": "6bc465721fe0445c2b89e404747b5cf16b96b2bea5bb42265a5da92f0f1783f4",
+      "publishedAt": "2026-10-27T15:19:10.721Z",
+      "publishedAtMs": 1793114350722,
+      "presentation": {
+        "category": "Anime",
+        "purpose": "Turkish Subbed Anime with Hardcoded Fansub Subtitles in 1080p MP4",
+        "recommended": true,
+        "language": "Turkish Sub/Dub",
+        "languages": [
+          "sub",
+          "dub"
+        ],
+        "iconUrl": "https://www.google.com/s2/favicons?domain=anizm.net&sz=128"
+      },
+      "changelog": [
+        "1.0.4: Vibrant multi-shelf Home tab with Hero carousel, Top 10 anime, and latest episode shelves.",
+        "1.0.3: Fix search query parsing and add title aliases.",
+        "1.0.2: Direct 1080p MP4 fansub streams with multi-source resolution.",
+        "1.0.1: Multi-translator and multi-source resolution, safe Dean Edwards unpacker, and structured Season/Special episode indexing.",
         "1.0.0: Dedicated Anizm module with hardcoded Turkish fansub subtitles burned into direct 1080p MP4 frames."
       ]
     },
@@ -317,14 +328,14 @@
       "moduleIdentity": "SP-VID-990-FLMK",
       "moduleIdentityNumber": 990,
       "contentType": "video",
-      "version": "1.0.2",
-      "moduleVersion": "1.0.2",
+      "version": "1.0.3",
+      "moduleVersion": "1.0.3",
       "releaseTrack": "stable",
       "file": "modules/filmmakinesi-source-v1.zip",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/filmmakinesi-source-v1.zip",
-      "sha256": "804befb75e7ef2bc1e5c34a448943491615a4a74ef1e92fbbbf0089f87438ecd",
-      "publishedAt": "2026-10-26T22:27:34.327Z",
-      "publishedAtMs": 1793053654328,
+      "sha256": "2311d98797ca4b68e09534331a7e6646891b25a4948cc5b4f3aef170505edd05",
+      "publishedAt": "2026-10-27T15:19:10.721Z",
+      "publishedAtMs": 1793114350722,
       "presentation": {
         "category": "Movies & TV",
         "purpose": "1080p Full HD Movies & Series with Switchable Original Audio (Altyazılı) and Turkish Dub (Dublaj) via Rapid & CloseLoad",
@@ -337,6 +348,7 @@
         "iconUrl": "https://www.google.com/s2/favicons?domain=filmmakinesi.to&sz=128"
       },
       "changelog": [
+        "1.0.3: Vibrant multi-shelf Home tab with Hero carousel, Top 10 movies, and separate Movie and Series shelves.",
         "1.0.2: Fix broken search and discovery thumbnails by dynamically matching unblocked, high-resolution Amazon and Metahub posters via Cinemeta and IMDb ID indexing, update module icon to unblocked Google Favicon CDN.",
         "1.0.1: Fix iOS JavaScriptCore playback failure by replacing eval/new Function/URL with pure-JS decipher algorithm, strip URL hash fragments, bind high-res Metahub poster via IMDb ID, and extract authentic plot description from schema.org.",
         "1.0.0: Dedicated FilmMakinesi module with isolated Rapid a2 (Original Audio + Turkish CC) and a1 (Turkish Dub) variant streams, CloseLoad support, and inlined WebVTT subtitles."

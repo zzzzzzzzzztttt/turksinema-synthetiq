@@ -468,15 +468,34 @@ async function discoveryHome() {
     const sections = [];
     if (items.length > 0) {
       sections.push({
-        id: 'dizigom_popular',
-        title: 'Popüler Dizi ve Filmler',
-        type: 'featured',
-        items: items.slice(0, 30)
+        id: 'dizigom-hero',
+        title: 'Öne Çıkan Popüler Diziler',
+        style: 'hero',
+        items: items.slice(0, 6),
+        viewAll: { mode: 'feed', feedId: 'hero' }
+      });
+
+      if (items.length >= 10) {
+        sections.push({
+          id: 'dizigom-top10',
+          title: 'En Popüler 10 Dizi',
+          style: 'top10',
+          items: items.slice(0, 10),
+          viewAll: { mode: 'feed', feedId: 'top10' }
+        });
+      }
+
+      sections.push({
+        id: 'dizigom-latest',
+        title: 'Trend Yabancı Diziler',
+        style: 'poster',
+        items: items.slice(0, 30),
+        viewAll: { mode: 'feed', feedId: 'latest' }
       });
     }
-    return sections;
+    return { sections };
   } catch (err) {
-    return [];
+    return { sections: [] };
   }
 }
 
@@ -486,14 +505,20 @@ async function discoveryHome() {
 async function discoveryFeed(feedId, page = 1) {
   try {
     const home = await discoveryHome();
-    const section = home.find(s => s.id === feedId) || home[0];
-    return section ? section.items : [];
+    const sections = Array.isArray(home && home.sections) ? home.sections : [];
+    const id = String(feedId || '').toLowerCase();
+    const section = sections.find(s => s.id === id || s.id.includes(id)) || sections[0];
+    const items = section ? section.items : [];
+    return {
+      items: items,
+      page: Number(page) || 1,
+      hasMore: false
+    };
   } catch (err) {
-    return [];
+    return { items: [], page: 1, hasMore: false };
   }
 }
 
-// Module Exports
 globalThis.searchResults = searchResults;
 globalThis.extractDetails = extractDetails;
 globalThis.extractEpisodes = extractEpisodes;

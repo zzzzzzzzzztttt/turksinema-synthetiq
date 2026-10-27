@@ -4,8 +4,8 @@
   "contentType": "video",
   "language": "tr",
   "contractVersion": 3,
-  "moduleVersion": "1.0.1",
-  "version": "1.0.1",
+  "moduleVersion": "1.0.2",
+  "version": "1.0.2",
   "moduleFamilyId": "asyadizi_source_v1",
   "moduleIdentity": "SP-VID-993-ASYD",
   "moduleIdentityNumber": 993,
@@ -42,7 +42,7 @@
       "discovery_v1": true
     },
     "caps": {
-      "homeMaxResults": 40,
+      "homeMaxResults": 120,
       "maxResponseBytes": 5242880,
       "timeoutMs": 30000,
       "maxConcurrentRequests": 4

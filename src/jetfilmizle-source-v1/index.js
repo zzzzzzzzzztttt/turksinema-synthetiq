@@ -724,7 +724,7 @@ async function extractSubtitles(pageUrl) {
 async function discoveryHome() {
   try {
     const html = await httpGet(BASE_URL + '/');
-    if (!html) return [];
+    if (!html) return { sections: [] };
 
     const items = [];
     const seen = new Set();
@@ -734,41 +734,95 @@ async function discoveryHome() {
       try {
         const parsed = JSON.parse(jm[1]);
         if (parsed.itemListElement && Array.isArray(parsed.itemListElement)) {
-          for (const el of parsed.itemListElement) {
-            const it = el.item || {};
-            const url = it.url ? makeAbsolute(it.url) : '';
-            if (!url || seen.has(url)) continue;
-            seen.add(url);
-            const isSeries = it['@type'] === 'TVSeries' || url.includes('/dizi/');
-            items.push({
-              id: url,
-              title: cleanText(it.name || ''),
-              url: url,
-              href: url,
-              image: it.image ? makeAbsolute(it.image) : '',
-              poster: it.image ? makeAbsolute(it.image) : '',
-              coverUrl: it.image ? makeAbsolute(it.image) : '',
-              isSeries: isSeries,
-              type: isSeries ? 'series' : 'movie'
-            });
+          for (const it of parsed.itemListElement) {
+            const entry = it.item || it;
+            const href = entry.url || entry['@id'];
+            if (!href || seen.has(href)) continue;
+            seen.add(href);
+
+            const title = cleanText(entry.name || '');
+            const poster = entry.image ? makeAbsolute(entry.image) : '';
+            if (title && href) {
+              items.push({
+                id: href,
+                title,
+                url: href,
+                href,
+                image: poster,
+                poster,
+                coverUrl: poster,
+                backdrop: poster,
+                type: 'movie',
+                isSeries: false,
+                badge: 'Film'
+              });
+            }
           }
         }
       } catch (_) {}
     }
 
+    if (items.length === 0) {
+      const cardMatches = html.matchAll(/<a[^>]+href="([^"]+)"[^>]*class="[^"]*(?:poster|movie-item)[^"]*"[^>]*>([\s\S]*?)<\/a>/gi);
+      for (const m of cardMatches) {
+        const href = makeAbsolute(m[1]);
+        if (seen.has(href)) continue;
+        seen.add(href);
+
+        const inner = m[2];
+        const titleMatch = inner.match(/alt="([^"]+)"/i) || inner.match(/<h2[^>]*>([\s\S]*?)<\/h2>/i);
+        const imgMatch = inner.match(/src="([^"]+)"/i);
+        const title = titleMatch ? cleanText(titleMatch[1]) : href.split('/').filter(Boolean).pop();
+        const poster = imgMatch ? makeAbsolute(imgMatch[1]) : '';
+
+        items.push({
+          id: href,
+          title,
+          url: href,
+          href,
+          image: poster,
+          poster,
+          coverUrl: poster,
+          backdrop: poster,
+          type: 'movie',
+          isSeries: false,
+          badge: 'Film'
+        });
+      }
+    }
+
     const sections = [];
     if (items.length > 0) {
       sections.push({
-        id: 'jetfilmizle_featured',
-        title: 'Öne Çıkan Filmler ve Diziler',
-        type: 'featured',
-        items: items.slice(0, 30)
+        id: 'jet-hero',
+        title: 'Öne Çıkan Sinema Filmleri',
+        style: 'hero',
+        items: items.slice(0, 6),
+        viewAll: { mode: 'feed', feedId: 'hero' }
+      });
+
+      if (items.length >= 10) {
+        sections.push({
+          id: 'jet-top10',
+          title: 'En Çok İzlenen 10 Film',
+          style: 'top10',
+          items: items.slice(0, 10),
+          viewAll: { mode: 'feed', feedId: 'top10' }
+        });
+      }
+
+      sections.push({
+        id: 'jet-latest',
+        title: 'Yeni Eklenen Filmler',
+        style: 'poster',
+        items: items.slice(0, 30),
+        viewAll: { mode: 'feed', feedId: 'latest' }
       });
     }
 
-    return sections;
+    return { sections };
   } catch (_) {
-    return [];
+    return { sections: [] };
   }
 }
 
@@ -778,10 +832,17 @@ async function discoveryHome() {
 async function discoveryFeed(feedId, page = 1) {
   try {
     const home = await discoveryHome();
-    const section = home.find(s => s.id === feedId) || home[0];
-    return section ? section.items : [];
+    const sections = Array.isArray(home && home.sections) ? home.sections : [];
+    const id = String(feedId || '').toLowerCase();
+    const section = sections.find(s => s.id === id || s.id.includes(id)) || sections[0];
+    const items = section ? section.items : [];
+    return {
+      items: items,
+      page: Number(page) || 1,
+      hasMore: false
+    };
   } catch (_) {
-    return [];
+    return { items: [], page: 1, hasMore: false };
   }
 }
 

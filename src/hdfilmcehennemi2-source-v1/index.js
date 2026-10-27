@@ -841,7 +841,10 @@ async function extractSubtitles(pageUrl) {
  */
 async function discoveryHome() {
   try {
-    const html = await httpGet(BASE_URL + '/filmler/');
+    let html = await httpGet(BASE_URL + '/');
+    if (!html || !html.includes('poster')) {
+      html = await httpGet(BASE_URL + '/filmler/');
+    }
     const items = [];
     const seen = new Set();
     const cardRegex = /<a[^>]+href="([^"]+)"[^>]*class="[^"]*poster[^"]*"[^>]*>([\s\S]*?)<\/a>/gi;
@@ -854,12 +857,12 @@ async function discoveryHome() {
 
       const block = m[2];
       const titleMatch = block.match(/alt="([^"]+)"/i) || block.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i);
-      const imgMatch = block.match(/src="([^"]+)"/i);
+      const imgMatch = block.match(/src="([^"]+)"/i) || block.match(/data-src="([^"]+)"/i);
       const yearMatch = block.match(/\b(19\d\d|20\d\d)\b/);
       const ratingMatch = block.match(/(\d+\.\d+)/);
 
       const title = titleMatch ? cleanText(titleMatch[1]) : fullUrl.split('/').filter(Boolean).pop();
-      const poster = imgMatch ? makeAbsolute(imgMatch[1]) : '';
+      const poster = imgMatch ? resolvePageUrl(imgMatch[1]) : '';
       const isSeries = fullUrl.includes('/dizi/');
 
       items.push({
@@ -870,25 +873,46 @@ async function discoveryHome() {
         image: poster,
         poster: poster,
         coverUrl: poster,
-        releaseYear: yearMatch ? yearMatch[1] : '',
-        rating: ratingMatch ? ratingMatch[1] : '',
+        backdrop: poster,
+        type: isSeries ? 'tv' : 'movie',
         isSeries: isSeries,
-        type: isSeries ? 'series' : 'movie'
+        year: yearMatch ? yearMatch[1] : undefined,
+        badge: ratingMatch ? '★ ' + ratingMatch[1] : (isSeries ? 'Dizi' : 'Film')
       });
     }
 
     const sections = [];
     if (items.length > 0) {
       sections.push({
-        id: 'hdf_featured',
+        id: 'hdf-hero',
+        title: 'Öne Çıkan Filmler & Trendler',
+        style: 'hero',
+        items: items.slice(0, 6),
+        viewAll: { mode: 'feed', feedId: 'hero' }
+      });
+
+      if (items.length >= 10) {
+        sections.push({
+          id: 'hdf-top10',
+          title: 'Günün En Çok İzlenen 10 İçeriği',
+          style: 'top10',
+          items: items.slice(0, 10),
+          viewAll: { mode: 'feed', feedId: 'top10' }
+        });
+      }
+
+      sections.push({
+        id: 'hdf-latest',
         title: 'Yeni Eklenen Filmler',
-        type: 'featured',
-        items: items.slice(0, 30)
+        style: 'poster',
+        items: items.slice(0, 30),
+        viewAll: { mode: 'feed', feedId: 'latest' }
       });
     }
-    return sections;
+
+    return { sections };
   } catch (_) {
-    return [];
+    return { sections: [] };
   }
 }
 
@@ -898,10 +922,17 @@ async function discoveryHome() {
 async function discoveryFeed(feedId, page = 1) {
   try {
     const home = await discoveryHome();
-    const section = home.find(s => s.id === feedId) || home[0];
-    return section ? section.items : [];
+    const sections = Array.isArray(home && home.sections) ? home.sections : [];
+    const id = String(feedId || '').toLowerCase();
+    const section = sections.find(s => s.id === id || s.id.includes(id)) || sections[0];
+    const items = section ? section.items : [];
+    return {
+      items: items,
+      page: Number(page) || 1,
+      hasMore: false
+    };
   } catch (_) {
-    return [];
+    return { items: [], page: 1, hasMore: false };
   }
 }
 

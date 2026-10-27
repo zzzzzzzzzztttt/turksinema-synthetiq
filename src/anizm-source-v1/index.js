@@ -743,41 +743,60 @@ async function discoveryHome() {
       const linkMatch = block.match(/<a[^>]+href="([^"]+)"[^>]*>/i);
       if (!linkMatch) continue;
       const itemUrl = makeAbsolute(linkMatch[1]);
-      const imgMatch = block.match(/<img[^>]+src="([^"]+)"/i);
-      const cover = imgMatch ? makeAbsolute(imgMatch[1]) : '';
-      const titleMatch = linkMatch[0].match(/aria-label="([^"]+)"/i) || block.match(/alt="([^"]+)"/i);
-      let title = titleMatch ? cleanText(titleMatch[1].replace(/anime detaylar[ıi]|posteri/gi, '')) : '';
-      if (!title) {
-        const slug = itemUrl.split('/').filter(Boolean).pop();
-        title = slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-      }
+      const titleMatch = block.match(/<h2[^>]*class="[^"]*title[^"]*"[^>]*>([\s\S]*?)<\/h2>/i) ||
+                         block.match(/title="([^"]+)"/i);
+      const title = titleMatch ? cleanText(titleMatch[1]) : itemUrl.split('/').pop().replace(/-/g, ' ');
+      const imgMatch = block.match(/<img[^>]+(?:src|data-src)="([^"]+)"/i);
+      const poster = imgMatch ? makeAbsolute(imgMatch[1]) : '';
+      const isMovie = itemUrl.includes('/film/');
+
       items.push({
         id: itemUrl,
         title: title,
         url: itemUrl,
         href: itemUrl,
-        image: cover,
-        poster: cover,
-        coverUrl: cover,
-        isSeries: true,
-        type: 'series'
+        image: poster,
+        poster: poster,
+        coverUrl: poster,
+        backdrop: poster,
+        isSeries: !isMovie,
+        type: isMovie ? 'movie' : 'tv',
+        badge: 'Anime'
       });
-      if (items.length >= 30) break;
     }
 
     const sections = [];
     if (items.length > 0) {
       sections.push({
-        id: 'anizm_popular',
-        title: 'Popüler Animeler',
-        type: 'featured',
-        items: items
+        id: 'anizm-hero',
+        title: 'Öne Çıkan Animeler',
+        style: 'hero',
+        items: items.slice(0, 6),
+        viewAll: { mode: 'feed', feedId: 'hero' }
+      });
+
+      if (items.length >= 10) {
+        sections.push({
+          id: 'anizm-top10',
+          title: 'Günün En Popüler 10 Animesi',
+          style: 'top10',
+          items: items.slice(0, 10),
+          viewAll: { mode: 'feed', feedId: 'top10' }
+        });
+      }
+
+      sections.push({
+        id: 'anizm-latest',
+        title: 'Son Eklenen Bölümler',
+        style: 'poster',
+        items: items.slice(0, 30),
+        viewAll: { mode: 'feed', feedId: 'latest' }
       });
     }
 
-    return sections;
+    return { sections };
   } catch (err) {
-    return [];
+    return { sections: [] };
   }
 }
 
@@ -787,10 +806,17 @@ async function discoveryHome() {
 async function discoveryFeed(feedId, page = 1) {
   try {
     const home = await discoveryHome();
-    const section = home.find(s => s.id === feedId) || home[0];
-    return section ? section.items : [];
+    const sections = Array.isArray(home && home.sections) ? home.sections : [];
+    const id = String(feedId || '').toLowerCase();
+    const section = sections.find(s => s.id === id || s.id.includes(id)) || sections[0];
+    const items = section ? section.items : [];
+    return {
+      items: items,
+      page: Number(page) || 1,
+      hasMore: false
+    };
   } catch (err) {
-    return [];
+    return { items: [], page: 1, hasMore: false };
   }
 }
 

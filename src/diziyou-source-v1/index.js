@@ -449,30 +449,53 @@ async function discoveryHome() {
       if (seen.has(epHref)) continue;
       seen.add(epHref);
 
+      const title = cleanText(m[2]);
+      const seriesHref = epHref.replace(/-sezon-[^\/]+-bolum\/?$/, '/');
+
       items.push({
-        id: epHref,
-        title: cleanText(m[2]),
-        url: epHref,
-        href: epHref,
+        id: seriesHref,
+        title: title.replace(/\s*\d+\.\s*Sezon.*$/i, '').trim() || title,
+        url: seriesHref,
+        href: seriesHref,
         image: '',
         poster: '',
         isSeries: true,
-        type: 'series'
+        type: 'tv',
+        badge: 'Dizi'
       });
     }
 
     const sections = [];
     if (items.length > 0) {
       sections.push({
-        id: 'diziyou_popular',
+        id: 'diziyou-hero',
+        title: 'Öne Çıkan Yabancı Diziler',
+        style: 'hero',
+        items: items.slice(0, 6),
+        viewAll: { mode: 'feed', feedId: 'hero' }
+      });
+
+      if (items.length >= 10) {
+        sections.push({
+          id: 'diziyou-top10',
+          title: 'Günün En Çok İzlenen 10 Dizisi',
+          style: 'top10',
+          items: items.slice(0, 10),
+          viewAll: { mode: 'feed', feedId: 'top10' }
+        });
+      }
+
+      sections.push({
+        id: 'diziyou-latest',
         title: 'Son Eklenen Bölümler',
-        type: 'featured',
-        items: items.slice(0, 30)
+        style: 'poster',
+        items: items.slice(0, 30),
+        viewAll: { mode: 'feed', feedId: 'latest' }
       });
     }
-    return sections;
+    return { sections };
   } catch (_) {
-    return [];
+    return { sections: [] };
   }
 }
 
@@ -482,10 +505,17 @@ async function discoveryHome() {
 async function discoveryFeed(feedId, page = 1) {
   try {
     const home = await discoveryHome();
-    const section = home.find(s => s.id === feedId) || home[0];
-    return section ? section.items : [];
+    const sections = Array.isArray(home && home.sections) ? home.sections : [];
+    const id = String(feedId || '').toLowerCase();
+    const section = sections.find(s => s.id === id || s.id.includes(id)) || sections[0];
+    const items = section ? section.items : [];
+    return {
+      items: items,
+      page: Number(page) || 1,
+      hasMore: false
+    };
   } catch (_) {
-    return [];
+    return { items: [], page: 1, hasMore: false };
   }
 }
 

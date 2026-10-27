@@ -4,8 +4,8 @@
   "contentType": "video",
   "language": "tr",
   "contractVersion": 3,
-  "moduleVersion": "1.0.3",
-  "version": "1.0.3",
+  "moduleVersion": "1.0.4",
+  "version": "1.0.4",
   "moduleFamilyId": "anizm_source_v1",
   "moduleIdentity": "SP-VID-994-ANZM",
   "moduleIdentityNumber": 994,
@@ -42,7 +42,7 @@
       "discovery_v1": true
     },
     "caps": {
-      "homeMaxResults": 40,
+      "homeMaxResults": 120,
       "maxResponseBytes": 5242880,
       "timeoutMs": 30000,
       "maxConcurrentRequests": 4

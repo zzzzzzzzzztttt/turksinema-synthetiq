@@ -4,8 +4,8 @@
   "contentType": "video",
   "language": "tr",
   "contractVersion": 3,
-  "moduleVersion": "1.0.0",
-  "version": "1.0.0",
+  "moduleVersion": "1.0.2",
+  "version": "1.0.2",
   "moduleFamilyId": "animeniz_source_v1",
   "moduleIdentity": "SP-VID-996-ANMZ",
   "moduleIdentityNumber": 996,
@@ -42,7 +42,7 @@
       "discovery_v1": true
     },
     "caps": {
-      "homeMaxResults": 40,
+      "homeMaxResults": 120,
       "maxResponseBytes": 5242880,
       "timeoutMs": 30000,
       "maxConcurrentRequests": 4

@@ -953,23 +953,60 @@ async function discoveryHome() {
         image: poster,
         poster: poster,
         coverUrl: poster,
+        backdrop: poster,
         isSeries: isSeries,
-        type: isSeries ? 'series' : 'movie'
+        type: isSeries ? 'tv' : 'movie',
+        badge: isSeries ? 'Dizi' : 'Film'
       });
     }
 
     const sections = [];
     if (items.length > 0) {
       sections.push({
-        id: 'dizci_featured',
-        title: 'Öne Çıkan Dizi ve Filmler',
-        type: 'featured',
-        items: items.slice(0, 30)
+        id: 'dizci-hero',
+        title: 'Öne Çıkan Yapımlar',
+        style: 'hero',
+        items: items.slice(0, 6),
+        viewAll: { mode: 'feed', feedId: 'hero' }
       });
+
+      if (items.length >= 10) {
+        sections.push({
+          id: 'dizci-top10',
+          title: 'En Çok İzlenen 10 Dizi & Film',
+          style: 'top10',
+          items: items.slice(0, 10),
+          viewAll: { mode: 'feed', feedId: 'top10' }
+        });
+      }
+
+      const series = items.filter(i => i.isSeries);
+      const movies = items.filter(i => !i.isSeries);
+
+      if (series.length > 0) {
+        sections.push({
+          id: 'dizci-series',
+          title: 'Trend Diziler',
+          style: 'poster',
+          items: series,
+          viewAll: { mode: 'feed', feedId: 'series' }
+        });
+      }
+
+      if (movies.length > 0) {
+        sections.push({
+          id: 'dizci-movies',
+          title: 'Popüler Filmler',
+          style: 'poster',
+          items: movies,
+          viewAll: { mode: 'feed', feedId: 'movies' }
+        });
+      }
     }
-    return sections;
+
+    return { sections };
   } catch (_) {
-    return [];
+    return { sections: [] };
   }
 }
 
@@ -979,10 +1016,17 @@ async function discoveryHome() {
 async function discoveryFeed(feedId, page = 1) {
   try {
     const home = await discoveryHome();
-    const section = home.find(s => s.id === feedId) || home[0];
-    return section ? section.items : [];
+    const sections = Array.isArray(home && home.sections) ? home.sections : [];
+    const id = String(feedId || '').toLowerCase();
+    const section = sections.find(s => s.id === id || s.id.includes(id)) || sections[0];
+    const items = section ? section.items : [];
+    return {
+      items: items,
+      page: Number(page) || 1,
+      hasMore: false
+    };
   } catch (_) {
-    return [];
+    return { items: [], page: 1, hasMore: false };
   }
 }
 
