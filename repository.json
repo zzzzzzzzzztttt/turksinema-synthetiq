@@ -3,14 +3,14 @@
   "repositoryId": "turksinema-synthetiq",
   "name": "TurkSinema Synthetiq Repository",
   "enabled": true,
-  "publishedAtMs": 1793305523096,
+  "publishedAtMs": 1793308620029,
   "bundle": {
     "version": 20,
     "minAppVersion": "8.0.0",
     "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/bundles/turksinema-bundle.zip",
     "packagePath": "/zzzzzzzzzztttt/turksinema-synthetiq/main/bundles/turksinema-bundle.zip",
-    "sha256": "dc420915e37fcb8f235426cf1a9eff9f2d50de9ebf51e82d8984b26efe3eed6b",
-    "signature": "3X6mwvIhsEXWHhjgWAtWNx3HVG13jxmsYYljP/u2pGtsnpizfk0LKMbR2ZkO2Tng5WElvu6s7n8zg/p6fk0khg=="
+    "sha256": "512350e106c6da07abed4aca9dae6a856e71dbef2da3116acba424ec22aebd16",
+    "signature": "fuy8wBUYYVUfp6LXdO/D8gnoYLwjvWPipNkZKi57S4t+uGJvrDJBzrWrzKGPWlz6TMVv2/MbeFDVr482C1rUPA=="
   },
   "modules": [
     {
@@ -24,9 +24,9 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/hdfilmcehennemi2-source-v1.zip",
       "packagePath": "/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/hdfilmcehennemi2-source-v1.zip",
-      "sha256": "c41e167b3ca2b63a7b96112e4fee3f6f67ea0c485b72b783c4148763494a477f",
-      "signature": "PNbKpMO+Pcl93dzNtQgwXkHxfzExu6i6dVKcIsEqqlbV8Hk9HZ86Rwn2NwfAcxJ1g+OPO5WLvfr8Yhy7f5Q4fw==",
-      "publishedAtMs": 1793305523096,
+      "sha256": "2fbf2e214fc776d22531133b493dd8c030f9d69500565437a1b890cb065e0f14",
+      "signature": "wxOx3L2PhAjHFvj/GMynTkwI0f1DXShWC7sEhmq2eWbliIinxRAj9Q22b5NH1zeXO049lRrLzfMtuyxi3eC0sA==",
+      "publishedAtMs": 1793308620029,
       "changelog": [
         "1.0.6: Vibrant multi-shelf Home tab with Hero carousel, Top 10 rankings, and categorised movie rows.",
         "1.0.5: Prevent 2MB iOS JSON buffer truncation by deduplicating subtitle tracks, optimizing VTT inline budget, and removing redundant subtitles array from server entries.",
@@ -59,9 +59,9 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/asyadizi-source-v1.zip",
       "packagePath": "/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/asyadizi-source-v1.zip",
-      "sha256": "1b00b0064680d037c0a1683e77c6c0b36f1f857ab0681e2bc28a7b94ecc27d1e",
-      "signature": "ujoln4rOZqHTckE7mh/19UtN/d7TJ4641BC7UAx2s/ozGcd65C8XpaqkKKSwGpKWbihtPiKaKtAhCxD5TOwYaw==",
-      "publishedAtMs": 1793305523096,
+      "sha256": "0b5836737ed50eba45fd6562d53c15fd4b0e871c1f1e228468663467e1022de1",
+      "signature": "hkUsyocPDGxh+kJgIQYBzgY3JYTb0+2/wTMYkys+H/PctRVoG+Y0iGdKRmhQSTVckpCfPl0cgit4Lef0jXK4sA==",
+      "publishedAtMs": 1793308620029,
       "changelog": [
         "1.0.3: Multi-query discovery combining homepage and catalog, stripping thumbnail prefixes for full-res posters, and fixing single-item shelf void.",
         "1.0.2: Vibrant multi-shelf Home tab with Hero carousel, Top 10 Asian Dramas, and trending K-Drama shelves.",
@@ -81,6 +81,35 @@
       }
     },
     {
+      "moduleId": "korediziizle-source-v1",
+      "moduleFamilyId": "korediziizle_source_v1",
+      "moduleIdentity": "SP-VID-988-KDZI",
+      "moduleIdentityNumber": 988,
+      "contentType": "video",
+      "version": "1.0.0",
+      "moduleVersion": "1.0.0",
+      "minAppVersion": "8.0.0",
+      "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/korediziizle-source-v1.zip",
+      "packagePath": "/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/korediziizle-source-v1.zip",
+      "sha256": "6fa41b1f9df8b7047d7550efa26cb8f88f9c1c3a50a86545c5735dc9650af4da",
+      "signature": "bZWGgnOZ+2PsMBiFEYlXvUbCHwAOFERWZ6FfsYnUJYo2ABE9YhTnQCFn2UkEhOxlZ3TQw1wMJRvc/6EshN1xsg==",
+      "publishedAtMs": 1793308620029,
+      "changelog": [
+        "1.0.0: Initial release of KoreDiziizle module for Asian Dramas & Movies with Ok.ru (1080p MP4 & HLS), Vidmoly, and VK Video streams, instant autocomplete search, and multi-shelf Home discovery."
+      ],
+      "presentation": {
+        "category": "Asian Dramas",
+        "purpose": "Korean, Chinese & Asian Dramas & Movies with High-Speed Ok.ru, VkVideo & Vidmoly Streams",
+        "recommended": true,
+        "language": "Turkish Sub/Dub",
+        "languages": [
+          "sub",
+          "dub"
+        ],
+        "iconUrl": "https://www.google.com/s2/favicons?domain=korediziizletr.org&sz=128"
+      }
+    },
+    {
       "moduleId": "jetfilmizle-source-v1",
       "moduleFamilyId": "jetfilmizle_source_v1",
       "moduleIdentity": "SP-VID-995-JETF",
@@ -91,9 +120,9 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/jetfilmizle-source-v1.zip",
       "packagePath": "/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/jetfilmizle-source-v1.zip",
-      "sha256": "756b9e69855ca2fcee4e15dc75aab06240effbf3875935fc4d6aaa336550c0d2",
-      "signature": "+kQ/jk/bh/vvIL9fCZAlEYgqCThZz2lKMk4g1kzh57/5VLzgeEw6TAkJBKLY4V0QjQc5tkDYXBJ8PynOSZDFrQ==",
-      "publishedAtMs": 1793305523096,
+      "sha256": "4d6c822cfd3c9f094ab26793177550705b642182dd97dd81a645da461551c9fa",
+      "signature": "VzTs1mi1PMHLGu259o6kEECmIdgpabM5lvOBzhxc1LEZ1IhkRQHWU0Sp2AVG0wMD+h54BmR6vhiL1o/JU0fcNQ==",
+      "publishedAtMs": 1793308620029,
       "changelog": [
         "1.0.2: Vibrant multi-shelf Home tab with Hero carousel, Top 10 movies, and fresh cinema shelves.",
         "1.0.1: Fix iOS fetchv2 response unwrapping, remove URLSearchParams dependency for JavaScriptCore, and ensure valid JSON stream object return on playback errors.",
@@ -122,9 +151,9 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizci-source-v1.zip",
       "packagePath": "/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizci-source-v1.zip",
-      "sha256": "63a08422005ca43bf6ae4d99e00889db7b211a6e72f1504baae916c4d76d1c50",
-      "signature": "dnTjUmaqhIXnB5KGDgtaAnq/VM2Yb0FAAYv9rpB+c2fH0zBiObdTwd5XhlGzjBdnK9Wpgr5ioaYGUOjBqEN0ig==",
-      "publishedAtMs": 1793305523096,
+      "sha256": "d3a5d9a4c91a94d1c09ef3cbfccd572b98cfce4bc62a2b689bb80c645fac2bbd",
+      "signature": "FB42VRbIOg/igvdW44hOSWhsBw6cBH5nNSeprazbNvO1xNpvv0X5UcMyL1zJ9ByVPcmDQ/tJWLpAG7e/ddmvOw==",
+      "publishedAtMs": 1793308620029,
       "changelog": [
         "1.0.5: Upgraded homepage card parser targeting <article> elements, resolving missing posters, broken thumbnails, and slug titles in Hero and Top 10 rows.",
         "1.0.4: Vibrant multi-shelf Home tab with Hero carousel, Top 10 rankings, and separated Series & Movies shelves.",
@@ -156,9 +185,9 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/diziyou-source-v1.zip",
       "packagePath": "/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/diziyou-source-v1.zip",
-      "sha256": "aa2830f1d2bed7da84051bc0bc8ecdf11c3e25735273252593ad050c92dca4e3",
-      "signature": "r4EataNxerUu1mch4UT4U4kRXbKwtxyn7ZA9VFXDst9EUyjKfbVcLLKmrTDg0EaiVzTDIatPhGFcCDen1lglxg==",
-      "publishedAtMs": 1793305523096,
+      "sha256": "12df5c6eaf71cc8dc69fc7ea2538019cc7c9415dd0fddd13ab09426b07ed3d4f",
+      "signature": "yLR+6szHd4U5ARF86F+30fH2ohLGL5/kHTpK2+I3WUuUJmZwGULJjdxveVGhozrTLH6yFfkNMqVBlnGMZz/QOw==",
+      "publishedAtMs": 1793308620029,
       "changelog": [
         "1.0.2: Parsed .listepisodes with lazy-loaded data-src extraction, providing clean series titles and full WebP backdrops across Hero and Top 10.",
         "1.0.1: Vibrant multi-shelf Home tab with Hero carousel, Top 10 series, and latest episode shelves.",
@@ -187,9 +216,9 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizimom-source-v1.zip",
       "packagePath": "/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizimom-source-v1.zip",
-      "sha256": "9b006ded479ee9ddc7dd68182be5064673f9d05980ddb82d939ec0e6ce6037f7",
-      "signature": "iKFJBeWUC3Gt6alZLQwcm9L/DVtwXDsH0W039XW8BcSvNUkRvDk4fU60QWTA6GSxYvYJu+tjYW4a4Qe30AEsGA==",
-      "publishedAtMs": 1793305523096,
+      "sha256": "cdec83a926a1f42e066ff3b1eb44c5205ff8db6de12164492f38b444f66bb7cc",
+      "signature": "CJ+37vavFIJWgawj2zEp1vD8+AvLrsSHlra0LABXSFMTF1AqpOviBTDDYJipaCfgfXuanEftQypwueoTBnnT/A==",
+      "publishedAtMs": 1793308620029,
       "changelog": [
         "1.0.2: Fixed duplicate declaration, ordered sections correctly to isolate Top 10 series, and strictly validated non-empty cover art for all shelves.",
         "1.0.1: Vibrant multi-shelf Home tab with Hero carousel, Top 10 rankings, and trend series/movie shelves.",
@@ -218,9 +247,9 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizigom-source-v1.zip",
       "packagePath": "/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/dizigom-source-v1.zip",
-      "sha256": "086e700d6610d3380ae2e7c20e80f94ad3559edd89bda7f53cb0b18f5fb316b6",
-      "signature": "fNPWyDk4pxnd37oe5maNSz+Fd8lZipJsffGmLU+UQ5Y3RO4V7xRbKtOIiCE/mTZY8efx2Ya0fUc4Mh0QGvqiCw==",
-      "publishedAtMs": 1793305523096,
+      "sha256": "53b1dd246e966b4428e0df07e276aa6013f4feb84eae290dbb87b317bb396854",
+      "signature": "4PLteokTIgeKlb/cnYCB5DUNGhSPJD33am8be7/wbJDs4xz0aSliO75Pgla3VHIjDCUbV5SwZHhE3b0Vk8tuRQ==",
+      "publishedAtMs": 1793308620029,
       "changelog": [
         "1.0.2: Upgraded card parser to match authentic poster articles rather than action buttons, binding TMDB backdrops and high-res posters.",
         "1.0.1: Vibrant multi-shelf Home tab with Hero carousel, Top 10 rankings, and trending foreign series shelves.",
@@ -249,9 +278,9 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animeniz-source-v1.zip",
       "packagePath": "/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animeniz-source-v1.zip",
-      "sha256": "dbfba6c31d4cdc4234826fcfbde102cde49ad6319c2ffe14515028e48a415aae",
-      "signature": "CrveomZVA3IlW4OBot5s95Smr/gtfOnl5dSTeAdOYnLumPmw94l9CLUFN9/5XLcvLuyUw+jOV25rrl2N9AhzRw==",
-      "publishedAtMs": 1793305523096,
+      "sha256": "70ae26396e277dad1d397131c61f9e23f36a40c581a5669ec30b944f02194dff",
+      "signature": "FCdddbxSjhWvDcFoCY0xaIjQQy0ep3YPCd947n2xadaX9YhovO8GuRqNbk7wBcqzFSEFgshtW6ZFzXulxjNGHA==",
+      "publishedAtMs": 1793308620029,
       "changelog": [
         "1.0.2: Vibrant multi-shelf Home discovery with Hero backdrop carousel, Top 10 anime, and categorized shelves for Action, Sci-Fi, Comedy, Drama, and Top Rated.",
         "1.0.1: Add multi-shelf discovery home feed.",
@@ -280,9 +309,9 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animland-source-v1.zip",
       "packagePath": "/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/animland-source-v1.zip",
-      "sha256": "ac1891eaa3d0928ea3eebe1cf97d84e4c54db736d641314be558cfc856af0150",
-      "signature": "x5QjQ1Vw1AFsxNkjTIMl2S1vxW2/CgisdC7Wd0ed1CyEzmdIS3lQIPgtjgLLidvhcybDHU4846VZtd/8g3Cddw==",
-      "publishedAtMs": 1793305523096,
+      "sha256": "f7846f3b4497f74406331621f3392cc8bd871e2cc45d1d7bbf224dc852d007b4",
+      "signature": "GFC8XQWolGNXXq+gN1CDisDX5hRapIZ1Q9uocM/tP+R6f7sSvdGAOZZLQZE3/bykW+e4zXbg6GuuDeXsSp4eCA==",
+      "publishedAtMs": 1793308620029,
       "changelog": [
         "1.0.2: Fixed duplicate declaration, integrated /page/top API for authentic Top 10 Anime rankings, and bound HD backdrops to prevent black hero boxes.",
         "1.0.1: Vibrant multi-shelf Home tab with Hero carousel, Top 10 rankings, and new releases.",
@@ -311,9 +340,9 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/anizm-source-v1.zip",
       "packagePath": "/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/anizm-source-v1.zip",
-      "sha256": "4e8e8ddf1909847455686d510dfee1cb1584fab4f15d9284a9ba2ff258247cf0",
-      "signature": "qLyTk9z5mp/qPoJKRfT1ooYSv/udi1kTfFw1ZHkwgxQh9btPR2tyJDvQYUZNOFhBlBaUrh2DuPJmpczA2ou9ag==",
-      "publishedAtMs": 1793305523096,
+      "sha256": "ffe088f0b3a494a4ebd8cb6bdae11fad03f90dde2b16d7c69ae4c3b1e08ef426",
+      "signature": "Y49cZRSuyfHlYfkfHUXG67V0n8gJYfB4CQ1AmA8e3KqjV82XkMgT9Qv8hyf24TQlPbj4inCGPjKFjU0BLSYdTA==",
+      "publishedAtMs": 1793308620029,
       "changelog": [
         "1.0.5: Redesigned parser targeting .v3-hero-slide and .v3-episode-card, delivering full-resolution posters, backdrops, and populated episode shelves.",
         "1.0.4: Vibrant multi-shelf Home tab with Hero carousel, Top 10 anime, and latest episode shelves.",
@@ -345,9 +374,9 @@
       "minAppVersion": "8.0.0",
       "packageUrl": "https://raw.githubusercontent.com/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/filmmakinesi-source-v1.zip",
       "packagePath": "/zzzzzzzzzztttt/turksinema-synthetiq/main/modules/filmmakinesi-source-v1.zip",
-      "sha256": "748d4a0f9f76797acf611608bdec35954efe4b66503b3b1a1978bbd46b79539f",
-      "signature": "cyFgxBEA0baoqJPShr/41ACvD5zq+MkXK3U1J8G3Hh9VnW6+fqn/5nWhoqz8rD7dzlGM1uJIxrI98oTquV4w0Q==",
-      "publishedAtMs": 1793305523096,
+      "sha256": "f7ed0383813e1df07a37a8054bbf9d6131abc6f7c8399e8ee3fadedd905ec0a3",
+      "signature": "Kgi66a2M6oKflcdwCSoH28ejCo57QJv8Tx3req2/2XxeOqK06iSCn9GAw2zS15bVA1AbBmx2hu8VP6odmwkU8g==",
+      "publishedAtMs": 1793308620029,
       "changelog": [
         "1.0.4: Structured multi-shelf Discovery Home with explicit Hero carousel, Top 10 rankings, and separate Movie & Series feeds.",
         "1.0.3: Vibrant multi-shelf Home tab with Hero carousel, Top 10 movies, and separate Movie and Series shelves.",
@@ -368,7 +397,7 @@
       }
     }
   ],
-  "signature": "7wIScZXnp9JGN+Azhp/c5xKg9Uugza2OevTX9AJM2orgPLz4BI/DtC124dIiwzsbl+jxlOCvXhY+1BqkZePFNg==",
+  "signature": "hxukIyQk/83mI4alsjYAF6T8X59JlnTvTIjh3Wj8VKXpXFV/kbs1TIxbGiWxvY1x0BFpumhql2qpwxFO+DlNqw==",
   "version": "1.0.0",
-  "updatedAt": "2026-10-29T20:25:23.096Z"
+  "updatedAt": "2026-10-29T21:17:00.029Z"
 }
