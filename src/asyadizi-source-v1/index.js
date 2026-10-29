@@ -667,42 +667,56 @@ async function extractSubtitles() {
  */
 async function discoveryHome() {
   try {
-    const html = await httpGet(BASE_URL + '/');
-    if (!html) return { sections: [] };
+    const [h1, h2] = await Promise.all([
+      httpGet(BASE_URL + '/'),
+      httpGet(BASE_URL + '/kore-dizileri-izle/').catch(() => '')
+    ]);
+    if (!h1) return { sections: [] };
 
     const items = [];
     const seen = new Set();
 
-    const matches = html.matchAll(/<a[^>]+href=["'](https:\/\/asyadizi\.com\/dizi\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi);
-    for (const m of matches) {
-      const href = m[1];
-      if (seen.has(href)) continue;
+    function parseHtml(html) {
+      if (!html) return;
+      const blockRegex = /<div[^>]*class="[^"]*(?:film-kutusu|dizi-kutusu|item|box|poster|card|col-)[^"]*"[^>]*>([\s\S]*?)<\/div>/gi;
+      let bm;
+      while ((bm = blockRegex.exec(html)) !== null) {
+        const block = bm[1];
+        const linkMatch = block.match(/href=["'](https:\/\/asyadizi\.com\/dizi\/[^"']+)["']/i);
+        if (!linkMatch) continue;
+        const href = linkMatch[1];
+        if (seen.has(href)) continue;
 
-      const inner = m[2];
-      const imgM = inner.match(/<img[^>]+(?:data-src|src)=["']([^"']+)["']/i);
-      const poster = imgM ? makeAbsolute(imgM[1]) : '';
+        const imgMatch = block.match(/data-src=["'](https?:[^"']+)["']/i) ||
+                         block.match(/src=["'](https?:\/\/[^"']+\.(?:jpg|jpeg|png|webp)[^"']*)["']/i);
+        const titleMatch = block.match(/title=["']([^"']+)["']/i) ||
+                           block.match(/alt=["']([^"']+)["']/i) ||
+                           block.match(/<(?:h2|h3|h4|span|a)[^>]*>([^<]{2,60})<\//i);
 
-      let title = cleanText(inner);
-      if (!title) {
-        const slug = href.replace(/\/+$/, '').split('/').pop() || '';
-        title = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        if (imgMatch && titleMatch) {
+          seen.add(href);
+          const poster = imgMatch[1];
+          const hires = poster.replace(/\/thumb_\/[^\/]+\//, '/');
+          const title = titleMatch[1].replace(/&amp;/g, '&').trim();
+          items.push({
+            id: href,
+            title,
+            url: href,
+            href,
+            image: hires,
+            poster: hires,
+            coverUrl: hires,
+            backdrop: hires,
+            isSeries: true,
+            type: 'tv',
+            badge: 'K-Drama'
+          });
+        }
       }
-
-      seen.add(href);
-      items.push({
-        id: href,
-        title,
-        url: href,
-        href,
-        image: poster,
-        poster,
-        coverUrl: poster,
-        backdrop: poster,
-        isSeries: true,
-        type: 'tv',
-        badge: 'K-Drama'
-      });
     }
+
+    parseHtml(h1);
+    if (h2) parseHtml(h2);
 
     const sections = [];
     if (items.length > 0) {
@@ -731,7 +745,7 @@ async function discoveryHome() {
         id: 'asyadizi-latest',
         title: 'Trend Kore & Asya Dizileri',
         style: 'poster',
-        items: items.slice(0, 30),
+        items: items.slice(6),
         viewAll: { mode: 'feed', feedId: 'latest' }
       });
     }

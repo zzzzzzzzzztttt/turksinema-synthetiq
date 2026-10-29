@@ -441,28 +441,40 @@ async function discoveryHome() {
     const html = await httpRequest(BASE_URL + '/');
     const items = [];
     const seen = new Set();
-    const epRegex = /<a[^>]+href="(https?:\/\/www\.diziyou\.one\/[^\/"]*-sezon-[^\/"]*-bolum\/)"[^>]*title="([^"]+)"/gi;
-    let m;
 
-    while ((m = epRegex.exec(html)) !== null) {
-      const epHref = m[1];
-      if (seen.has(epHref)) continue;
-      seen.add(epHref);
+    const parts = html.split('<div class="listepisodes">');
+    for (let i = 1; i < parts.length; i++) {
+      const chunk = parts[i];
+      const linkMatch = chunk.match(/href="(https?:\/\/www\.diziyou\.one\/([^\/"]*?)-sezon-[^\/"]*-bolum\/)"/i);
+      if (!linkMatch) continue;
+      const epHref = linkMatch[1];
+      const rawSlug = linkMatch[2];
+      const seriesSlug = rawSlug.replace(/-\d+$/, '');
+      const seriesHref = BASE_URL + '/dizi/' + seriesSlug + '/';
+      if (seen.has(seriesHref)) continue;
 
-      const title = cleanText(m[2]);
-      const seriesHref = epHref.replace(/-sezon-[^\/]+-bolum\/?$/, '/');
+      const imgMatch = chunk.match(/data-src="([^"]+)"/i) || chunk.match(/src="([^"]+\.webp)"/i);
+      const titleMatch = chunk.match(/id="dizi-ismi"[^>]*>[\s\S]*?<span[^>]*>([\s\S]*?)<\/span>/i) ||
+                         chunk.match(/title="([^"]+)"/i);
 
-      items.push({
-        id: seriesHref,
-        title: title.replace(/\s*\d+\.\s*Sezon.*$/i, '').trim() || title,
-        url: seriesHref,
-        href: seriesHref,
-        image: '',
-        poster: '',
-        isSeries: true,
-        type: 'tv',
-        badge: 'Dizi'
-      });
+      if (imgMatch && titleMatch) {
+        seen.add(seriesHref);
+        const title = cleanText(titleMatch[1]).replace(/\s*\d+\.\s*Sezon.*$/i, '').trim();
+        const poster = imgMatch[1];
+        items.push({
+          id: seriesHref,
+          title: title,
+          url: seriesHref,
+          href: seriesHref,
+          image: poster,
+          poster: poster,
+          coverUrl: poster,
+          backdrop: poster,
+          isSeries: true,
+          type: 'tv',
+          badge: 'Dizi'
+        });
+      }
     }
 
     const sections = [];

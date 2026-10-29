@@ -439,6 +439,7 @@ async function searchResults(query) {
         item.poster = p;
         item.coverUrl = p;
         item.posterUrl = p;
+        item.backdrop = p;
       }
     }));
 
@@ -471,7 +472,7 @@ async function discoveryHome() {
         item.image = p;
         item.poster = p;
         item.coverUrl = p;
-        item.backdrop = p;
+        item.posterUrl = p;
       }
     }));
 
@@ -503,7 +504,7 @@ async function discoveryHome() {
         id: 'fm-movies',
         title: 'Yeni Eklenen Filmler',
         style: 'poster',
-        items: movies.slice(0, 24),
+        items: movies.slice(6, 36),
         viewAll: { mode: 'feed', feedId: 'movies' }
       });
     }
@@ -527,24 +528,472 @@ async function discoveryHome() {
 /**
  * Discovery Feed handler
  */
-async function discoveryFeed(feedId, page = 1) {
+async function discoveryFeed(page = 1) {
   try {
     const p = Math.max(1, parseInt(page, 10) || 1);
-    const home = await discoveryHome();
-    const sections = Array.isArray(home && home.sections) ? home.sections : [];
-    const id = String(feedId || '').toLowerCase();
-    const section = sections.find(s => s.id === id || s.id.includes(id)) || sections[0];
-    const items = section ? section.items : [];
-    return {
-      items: items,
-      page: p,
-      hasMore: false
-    };
+    const feedUrl = p === 1 ? `${BASE_URL}/filmler-1/` : `${BASE_URL}/filmler-1/page/${p}/`;
+    const html = await httpGet(feedUrl, { Referer: BASE_URL + '/' });
+    const items = parseCards(html);
+
+    // Enrich items
+    await Promise.all(items.slice(0, 20).map(async (item) => {
+      const p = await resolveCardPoster(item);
+      if (p) {
+        item.image = p;
+        item.poster = p;
+        item.coverUrl = p;
+        item.posterUrl = p;
+      }
+    }));
+
+    return items;
   } catch (_) {
-    return { items: [], page: 1, hasMore: false };
+    return [];
   }
 }
 
+/**
+ * Extract item details handler
+ */
+async function extractDetails(targetUrl) {
+  try {
+    const cleanUrl = String(targetUrl || '').replace(/#.*$/, '');
+    const html = await httpGet(cleanUrl, { Referer: BASE_URL + '/' });
+
+    // Title
+    const titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || html.match(/<meta property="og:title" content="([^"]+)"/i);
+    let title = cleanText(titleMatch ? titleMatch[1] : '');
+    title = title.replace(/\s*izle\b/i, '').replace(/\s*\(\d{4}\)/, '').trim();
+
+    // Check IMDb ID for high-res Metahub poster
+    const imdbMatch = html.match(/data-id="(tt\d+)"/i) ||
+                     html.match(/[?&]imdb_id=(tt\d+)/i) ||
+                     html.match(/imdb\.com\/title\/(tt\d+)/i) ||
+                     html.match(/\b(tt\d{5,})\b/i);
+    let poster = '';
+    let backdrop = '';
+    if (imdbMatch) {
+      const tt = imdbMatch[1];
+      poster = `https://images.metahub.space/poster/medium/${tt}/img`;
+      backdrop = `https://images.metahub.space/background/medium/${tt}/img`;
+    } else {
+      // Resolve poster from Cinemeta
+      const resolved = await resolveCardPoster({ id: cleanUrl, href: cleanUrl, title: title, rawPoster: '' }, []);
+      if (resolved) {
+        poster = resolved;
+        backdrop = resolved;
+      }
+    }
+
+    // Official movie description (schema.org or og:description, NOT footer text)
+    const schemaDescMatch = html.match(/"description"\s*:\s*"([^"]+)"/);
+    const ogDescMatch = html.match(/<meta property="og:description" content="([^"]+)"/i);
+    let description = cleanText(schemaDescMatch ? schemaDescMatch[1] : (ogDescMatch ? ogDescMatch[1] : ''));
+    if (description.includes('Tecrübeli çeviri') || description.includes('Tecrbeli eviri')) description = '';
+
+    // Duration & Rating
+    const durMatch = html.match(/data-duration="([^"]+)"/i) || html.match(/(\d+)\s*Dakika/i);
+    const duration = durMatch ? parseInt(durMatch[1], 10) : null;
+    const scoreMatch = html.match(/data-star="([^"]+)"/i) || html.match(/class="rating"[^>]*>([\s\S]*?)<\/div>/i);
+    let rating = null;
+    if (scoreMatch) {
+      const parsed = parseFloat(cleanText(scoreMatch[1]));
+      if (!isNaN(parsed)) rating = parsed;
+    }
+
+    // Cast / Actors
+    const actors = [];
+    const actorMatches = [...html.matchAll(/<(?:span|div|a)[^>]*class="[^"]*(?:item-title|actor|oyuncu)[^"]*"[^>]*>([^<]+)<\/(?:span|div|a)>/gi)];
+    actorMatches.forEach(m => {
+      const name = cleanText(m[1]);
+      if (name && name.length > 2 && !actors.includes(name) && !/kadro|göster|tüm/i.test(name)) {
+        actors.push(name);
+      }
+    });
+
+    const isDual = /dual/i.test(html);
+    const isDub = /dublaj/i.test(html) || /dublaj/i.test(title);
+
+    return {
+      id: cleanUrl,
+      title: title,
+      description: description,
+      summary: description,
+      image: poster,
+      poster: poster,
+      coverUrl: poster,
+      posterUrl: poster,
+      backdrop: backdrop,
+      backdropUrl: backdrop,
+      rating: rating,
+      duration: duration,
+      actors: actors,
+      subAvailable: true,
+      dubAvailable: isDual || isDub,
+      isSeries: cleanUrl.includes('/dizi/'),
+      type: cleanUrl.includes('/dizi/') ? 'series' : 'movie'
+    };
+  } catch (err) {
+    return {
+      id: targetUrl,
+      title: 'FilmMakinesi Content',
+      url: targetUrl,
+      subAvailable: true,
+      dubAvailable: true,
+      isSeries: targetUrl.includes('/dizi/'),
+      type: targetUrl.includes('/dizi/') ? 'series' : 'movie'
+    };
+  }
+}
+
+/**
+ * Extract episodes handler
+ */
+async function extractEpisodes(targetUrl) {
+  try {
+    const cleanUrl = String(targetUrl || '').replace(/#.*$/, '');
+    const html = await httpGet(cleanUrl, { Referer: BASE_URL + '/' });
+
+    // If it's a TV series, check for episode links
+    if (cleanUrl.includes('/dizi/')) {
+      const epMatches = [...html.matchAll(/<a[^>]+href="([^"]*(?:\/sezon-[0-9]+|\/bolum-[0-9]+)[^"]*)"[^>]*>([\s\S]*?)<\/a>/gi)];
+      const episodes = [];
+      const seen = new Set();
+
+      for (const m of epMatches) {
+        const epClean = m[1].replace(/#.*$/, '');
+        const epUrl = makeAbsolute(epClean, BASE_URL);
+        if (seen.has(epUrl)) continue;
+        seen.add(epUrl);
+
+        const sMatch = epUrl.match(/sezon-(\d+)/i);
+        const eMatch = epUrl.match(/bolum-(\d+)/i);
+        const sNum = sMatch ? parseInt(sMatch[1], 10) : 1;
+        const eNum = eMatch ? parseInt(eMatch[1], 10) : (episodes.length + 1);
+
+        const epTitle = cleanText(m[2]) || `${sNum}. Sezon ${eNum}. Bölüm`;
+
+        episodes.push({
+          id: epUrl,
+          title: epTitle,
+          url: epUrl,
+          href: epUrl,
+          season: sNum,
+          episode: eNum,
+          seasonNumber: sNum,
+          episodeNumber: eNum,
+          number: eNum,
+          subAvailable: true,
+          dubAvailable: true
+        });
+      }
+
+      if (episodes.length > 0) {
+        return episodes;
+      }
+    }
+
+    // Default movie: Single full-feature episode
+    const titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+    const title = cleanText(titleMatch ? titleMatch[1] : 'Full Film');
+
+    return [
+      {
+        id: cleanUrl,
+        title: title,
+        url: cleanUrl,
+        href: cleanUrl,
+        season: 1,
+        episode: 1,
+        seasonNumber: 1,
+        episodeNumber: 1,
+        number: 1,
+        subAvailable: true,
+        dubAvailable: true
+      }
+    ];
+  } catch (_) {
+    const cleanUrl = String(targetUrl || '').replace(/#.*$/, '');
+    return [
+      {
+        id: cleanUrl,
+        title: 'Full Film',
+        url: cleanUrl,
+        href: cleanUrl,
+        season: 1,
+        episode: 1,
+        seasonNumber: 1,
+        episodeNumber: 1,
+        number: 1,
+        subAvailable: true,
+        dubAvailable: true
+      }
+    ];
+  }
+}
+
+/**
+ * Extract video stream handler with isolated Audio & Subtitles support
+ */
+async function extractStreamUrl(targetUrl, lang) {
+  try {
+    const cleanUrl = String(targetUrl || '').replace(/#.*$/, '');
+    const want = String(lang || 'sub').trim().toLowerCase() === 'dub' ? 'dub' : 'sub';
+    const html = await httpGet(cleanUrl, { Referer: BASE_URL + '/' });
+
+    // Collect embed URLs from player tabs and iframes
+    let rapidEmbedUrl = '';
+    let closeLoadEmbedUrl = '';
+
+    const tabMatches = [...html.matchAll(/data-video_url="([^"]+)"/gi)];
+    for (const tm of tabMatches) {
+      const u = tm[1];
+      if (u.includes('rapid') && !rapidEmbedUrl) rapidEmbedUrl = u;
+      else if (u.includes('closeload') && !closeLoadEmbedUrl) closeLoadEmbedUrl = u;
+    }
+
+    if (!rapidEmbedUrl && !closeLoadEmbedUrl) {
+      const iframes = [...html.matchAll(/<iframe[^>]+(?:data-src|src)="([^"]+)"/gi)];
+      for (const im of iframes) {
+        const u = im[1];
+        if (u.includes('rapid') && !rapidEmbedUrl) rapidEmbedUrl = u;
+        else if (u.includes('closeload') && !closeLoadEmbedUrl) closeLoadEmbedUrl = u;
+      }
+    }
+
+    const subtitles = [];
+    const seenSubUrls = new Set();
+    let totalInlinedChars = 0;
+    const MAX_INLINE_BUDGET = 350000;
+
+    async function addSub(subUrl, label, language, isDefault, referer) {
+      if (!subUrl || seenSubUrls.has(subUrl)) return;
+      seenSubUrls.add(subUrl);
+
+      let vttContent = '';
+      if (totalInlinedChars < MAX_INLINE_BUDGET) {
+        try {
+          vttContent = await httpGet(subUrl, { Referer: referer });
+          if (vttContent && vttContent.includes('WEBVTT')) {
+            totalInlinedChars += vttContent.length;
+          } else {
+            vttContent = '';
+          }
+        } catch (_) {}
+      }
+
+      subtitles.push({
+        id: subUrl,
+        url: subUrl,
+        file: subUrl,
+        label: label,
+        language: language,
+        lang: language,
+        kind: 'captions',
+        default: isDefault,
+        content: vttContent || undefined,
+        headers: { Referer: referer }
+      });
+    }
+
+    let rapidStreamUrl = '';
+    let rapidSubUrl = '';
+    let rapidDubUrl = '';
+
+    // Process Rapid embed
+    if (rapidEmbedUrl) {
+      try {
+        const rHostname = getHostname(rapidEmbedUrl);
+        const rHtml = await httpGet(rapidEmbedUrl, { Referer: BASE_URL + '/' });
+        const masterUrl = decodeEmbedStream(rHtml, rHostname);
+
+        if (masterUrl) {
+          rapidStreamUrl = masterUrl;
+
+          const baseMasterDir = masterUrl.substring(0, masterUrl.lastIndexOf('/') + 1);
+          const masterQuery = masterUrl.includes('?') ? masterUrl.substring(masterUrl.indexOf('?')) : '';
+
+          rapidDubUrl = `${baseMasterDir}index-f2-v1-a1.m3u8${masterQuery}`;
+          rapidSubUrl = `${baseMasterDir}index-f2-v1-a2.m3u8${masterQuery}`;
+
+          const tracksMatch = rHtml.match(/tracks\s*:\s*(\[[^\]]+\])/);
+          if (tracksMatch) {
+            try {
+              const tracks = JSON.parse(tracksMatch[1]);
+              for (const tr of tracks) {
+                if (tr && tr.file && tr.file.includes('.vtt')) {
+                  const fullSubUrl = makeAbsolute(tr.file, `https://${rHostname}`);
+                  const label = tr.label || 'Türkçe Altyazı';
+                  const isTr = /türk|tur|tr/i.test(label) || tr.language === 'tr';
+                  await addSub(fullSubUrl, label, isTr ? 'tr' : (tr.language || 'en'), isTr, `https://${rHostname}/`);
+                }
+              }
+            } catch (_) {}
+          }
+        }
+      } catch (_) {}
+    }
+
+    let closeLoadStreamUrl = '';
+
+    // Process CloseLoad embed
+    if (closeLoadEmbedUrl) {
+      try {
+        const cHostname = getHostname(closeLoadEmbedUrl);
+        const cHtml = await httpGet(closeLoadEmbedUrl, { Referer: BASE_URL + '/' });
+        const streamUrl = decodeEmbedStream(cHtml, cHostname);
+
+        if (streamUrl) {
+          closeLoadStreamUrl = streamUrl;
+
+          const tracksMatch = cHtml.match(/tracks\s*:\s*(\[[^\]]+\])/);
+          if (tracksMatch) {
+            try {
+              const tracks = JSON.parse(tracksMatch[1]);
+              for (const tr of tracks) {
+                if (tr && tr.file && tr.file.includes('.vtt')) {
+                  const fullSubUrl = makeAbsolute(tr.file, `https://${cHostname}`);
+                  const label = tr.label || 'Türkçe Altyazı';
+                  const isTr = /türk|tur|tr/i.test(label) || tr.language === 'tr';
+                  await addSub(fullSubUrl, label, isTr ? 'tr' : (tr.language || 'en'), isTr, `https://${cHostname}/`);
+                }
+              }
+            } catch (_) {}
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Determine primary stream based on requested audio (sub vs dub)
+    let selectedUrl = '';
+    let streamLabel = '';
+
+    if (want === 'sub') {
+      if (rapidSubUrl) {
+        selectedUrl = rapidSubUrl;
+        streamLabel = 'sub 1080p';
+      } else if (closeLoadStreamUrl) {
+        selectedUrl = closeLoadStreamUrl;
+        streamLabel = 'sub Auto';
+      } else if (rapidStreamUrl) {
+        selectedUrl = rapidStreamUrl;
+        streamLabel = 'sub 1080p';
+      }
+    } else {
+      if (rapidDubUrl) {
+        selectedUrl = rapidDubUrl;
+        streamLabel = 'dub 1080p';
+      } else if (closeLoadStreamUrl) {
+        selectedUrl = closeLoadStreamUrl;
+        streamLabel = 'dub Auto';
+      } else if (rapidStreamUrl) {
+        selectedUrl = rapidStreamUrl;
+        streamLabel = 'dub 1080p';
+      }
+    }
+
+    if (!selectedUrl) {
+      throw new Error(`Failed to extract playable stream for ${cleanUrl}`);
+    }
+
+    // Build servers list
+    const servers = [];
+
+    if (rapidStreamUrl) {
+      const rUrl = want === 'sub' ? rapidSubUrl : rapidDubUrl;
+      servers.push({
+        name: `Rapid (${want.toUpperCase()})`,
+        label: `Rapid 1080p · ${want === 'dub' ? 'Türkçe Dublaj' : 'Orijinal Ses + Türkçe Altyazı'}`,
+        url: rUrl,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Referer': 'https://rapid.filmmakinesi.to/'
+        },
+        streamType: 'hls',
+        lang: want,
+        audioLanguage: want === 'dub' ? 'tr' : 'en',
+        audioLanguages: ['tr', 'en'],
+        quality: '1080p',
+        qualities: [
+          { label: '1080p', url: rUrl, headers: { Referer: 'https://rapid.filmmakinesi.to/' } }
+        ]
+      });
+    }
+
+    if (closeLoadStreamUrl) {
+      servers.push({
+        name: `CloseLoad (${want.toUpperCase()})`,
+        label: `CloseLoad · ${want === 'dub' ? 'Türkçe Dublaj' : 'Dual Audio (TR Dub / EN Sub)'}`,
+        url: closeLoadStreamUrl,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Referer': 'https://closeload.filmmakinesi.to/'
+        },
+        streamType: 'hls',
+        lang: want,
+        audioLanguage: want === 'dub' ? 'tr' : 'en',
+        audioLanguages: ['tr', 'en'],
+        quality: 'Auto',
+        qualities: [
+          { label: 'Auto', url: closeLoadStreamUrl, headers: { Referer: 'https://closeload.filmmakinesi.to/' } }
+        ]
+      });
+    }
+
+    // Sort subtitles so Turkish is always primary, and set default flag accordingly
+    subtitles.sort((a, b) => {
+      const aTr = a.language === 'tr' ? 1 : 0;
+      const bTr = b.language === 'tr' ? 1 : 0;
+      return bTr - aTr;
+    });
+
+    if (subtitles.length > 0 && want === 'sub') {
+      subtitles.forEach((s, idx) => {
+        s.default = idx === 0 && s.language === 'tr';
+      });
+    }
+
+    return {
+      url: selectedUrl,
+      streams: [streamLabel, selectedUrl],
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': BASE_URL + '/'
+      },
+      streamType: 'hls',
+      lang: want,
+      quality: '1080p',
+      defaultQuality: '1080p',
+      qualities: [
+        { label: '1080p', url: selectedUrl, headers: { Referer: BASE_URL + '/' } }
+      ],
+      subtitles: subtitles,
+      captions: subtitles,
+      servers: servers
+    };
+  } catch (err) {
+    return {
+      url: targetUrl,
+      streams: [],
+      subtitles: [],
+      error: { message: err ? err.message : 'FilmMakinesi stream extraction failed' }
+    };
+  }
+}
+
+/**
+ * Dedicated Subtitles extractor
+ */
+async function extractSubtitles(episodeUrl) {
+  try {
+    const stream = await extractStreamUrl(episodeUrl, 'sub');
+    return stream.subtitles || [];
+  } catch (_) {
+    return [];
+  }
+}
+
+// Module Exports
 globalThis.searchResults = searchResults;
 globalThis.extractDetails = extractDetails;
 globalThis.extractEpisodes = extractEpisodes;

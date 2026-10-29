@@ -79,39 +79,74 @@ async function httpGet(url, customHeaders = {}) {
 function parseDizigomCards(html) {
   const items = [];
   const seen = new Set();
-  const cardRegex = /<a[^>]+href="([^"]*(?:\/film\/|\/dizi\/)[^"]*)"[^>]*>([\s\S]*?)<\/a>/gi;
+  const blockRegex = /<(?:article|div|li)[^>]*class="[^"]*(?:card|item|poster|relative)[^"]*"[^>]*>([\s\S]*?)<\/(?:article|div|li)>/gi;
   let m;
-
-  while ((m = cardRegex.exec(html)) !== null) {
-    const rawUrl = m[1];
+  while ((m = blockRegex.exec(html)) !== null) {
+    const block = m[1];
+    const linkMatch = block.match(/href="([^"]*(?:\/film\/|\/dizi\/)[^"]*)"/i);
+    if (!linkMatch) continue;
+    const rawUrl = linkMatch[1];
     if (rawUrl.includes('/sezon-') || rawUrl.includes('/bolum-') || rawUrl.includes('/kategori/') || rawUrl.includes('/oyuncu/')) continue;
     const itemUrl = makeAbsolute(rawUrl);
     if (seen.has(itemUrl)) continue;
-    seen.add(itemUrl);
 
-    const block = m[2];
-    const imgMatch = block.match(/src="([^"]+)"/i);
-    const titleMatch = block.match(/<(?:h2|h3|h4|span|div|p)[^>]*class="[^"]*(?:title|name|font-semibold)[^"]*"[^>]*>([\s\S]*?)<\//i) ||
-                       block.match(/alt="([^"]+)"/i);
-    let title = titleMatch ? cleanText(titleMatch[1]) : '';
-    if (!title) {
-      const slug = itemUrl.split('/').filter(Boolean).pop();
-      title = slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    const imgMatch = block.match(/<img[^>]+(?:src|data-src)="([^"]+)"/i);
+    const titleMatch = block.match(/alt="([^"]+?)(?:\s*(?:Film|Dizi)\s*izle)?"/i) ||
+                       block.match(/<(?:h2|h3|h4|span|p)[^>]*class="[^"]*(?:title|name|font-semibold)[^"]*"[^>]*>([\s\S]*?)<\//i);
+
+    if (imgMatch && titleMatch) {
+      seen.add(itemUrl);
+      const title = cleanText(titleMatch[1]);
+      const cover = makeAbsolute(imgMatch[1]);
+      const isSeries = itemUrl.includes('/dizi/');
+      items.push({
+        id: itemUrl,
+        title: title,
+        url: itemUrl,
+        href: itemUrl,
+        image: cover,
+        poster: cover,
+        coverUrl: cover,
+        backdrop: cover,
+        isSeries: isSeries,
+        type: isSeries ? 'tv' : 'movie',
+        badge: isSeries ? 'Dizi' : 'Film'
+      });
     }
-    const cover = imgMatch ? makeAbsolute(imgMatch[1]) : '';
-    const isSeries = itemUrl.includes('/dizi/');
+  }
 
-    items.push({
-      id: itemUrl,
-      title: title,
-      url: itemUrl,
-      href: itemUrl,
-      image: cover,
-      poster: cover,
-      coverUrl: cover,
-      isSeries: isSeries,
-      type: isSeries ? 'series' : 'movie'
-    });
+  if (items.length === 0) {
+    const cardRegex = /<a[^>]+href="([^"]*(?:\/film\/|\/dizi\/)[^"]*)"[^>]*>([\s\S]*?)<\/a>/gi;
+    let cm;
+    while ((cm = cardRegex.exec(html)) !== null) {
+      const rawUrl = cm[1];
+      if (rawUrl.includes('/sezon-') || rawUrl.includes('/bolum-') || rawUrl.includes('/kategori/') || rawUrl.includes('/oyuncu/')) continue;
+      const itemUrl = makeAbsolute(rawUrl);
+      if (seen.has(itemUrl)) continue;
+
+      const block = cm[2];
+      const imgMatch = block.match(/(?:src|data-src)="([^"]+)"/i);
+      const titleMatch = block.match(/alt="([^"]+)"/i) || block.match(/<(?:h2|h3|h4|span|div|p)[^>]*>([\s\S]*?)<\//i);
+      if (imgMatch) {
+        seen.add(itemUrl);
+        const title = titleMatch ? cleanText(titleMatch[1]) : itemUrl.split('/').filter(Boolean).pop();
+        const cover = makeAbsolute(imgMatch[1]);
+        const isSeries = itemUrl.includes('/dizi/');
+        items.push({
+          id: itemUrl,
+          title,
+          url: itemUrl,
+          href: itemUrl,
+          image: cover,
+          poster: cover,
+          coverUrl: cover,
+          backdrop: cover,
+          isSeries,
+          type: isSeries ? 'tv' : 'movie',
+          badge: isSeries ? 'Dizi' : 'Film'
+        });
+      }
+    }
   }
   return items;
 }

@@ -734,62 +734,102 @@ async function extractStreamUrl(episodeUrl) {
 async function discoveryHome() {
   try {
     const html = await httpGet(BASE_URL + '/');
-    const items = [];
-    const cardRegex = /<article[^>]*class="[^"]*v3-catalog-card[^"]*"[^>]*>([\s\S]*?)<\/article>/gi;
-    let m;
+    if (!html) return { sections: [] };
 
-    while ((m = cardRegex.exec(html)) !== null) {
-      const block = m[1];
-      const linkMatch = block.match(/<a[^>]+href="([^"]+)"[^>]*>/i);
+    const heroItems = [];
+    const heroRegex = /<article[^>]*class="[^"]*v3-hero-slide[^"]*"[^>]*>([\s\S]*?)<\/article>/gi;
+    let hm;
+    while ((hm = heroRegex.exec(html)) !== null) {
+      const block = hm[1];
+      const linkMatch = block.match(/href="([^"]+)"/i);
+      const titleMatch = block.match(/<h[123][^>]*>([\s\S]*?)<\/h[123]>/i) ||
+                         block.match(/class="[^"]*title[^"]*"[^>]*>([\s\S]*?)<\//i);
+      const imgMatch = block.match(/<img[^>]+(?:src|data-v3-deferred-src)="([^"]+)"/i);
+
+      if (linkMatch && titleMatch && imgMatch) {
+        const href = makeAbsolute(linkMatch[1]);
+        const title = cleanText(titleMatch[1]);
+        const poster = makeAbsolute(imgMatch[1]);
+        heroItems.push({
+          id: href,
+          title,
+          href,
+          url: href,
+          image: poster,
+          poster,
+          coverUrl: poster,
+          backdrop: poster,
+          isSeries: true,
+          type: 'tv',
+          badge: 'Anime'
+        });
+      }
+    }
+
+    const epItems = [];
+    const seen = new Set();
+    const epRegex = /<article[^>]*class="[^"]*v3-episode-card[^"]*"[^>]*>([\s\S]*?)<\/article>/gi;
+    let em;
+    while ((em = epRegex.exec(html)) !== null) {
+      const block = em[1];
+      const linkMatch = block.match(/href="([^"]+)"/i);
       if (!linkMatch) continue;
-      const itemUrl = makeAbsolute(linkMatch[1]);
-      const titleMatch = block.match(/<h2[^>]*class="[^"]*title[^"]*"[^>]*>([\s\S]*?)<\/h2>/i) ||
-                         block.match(/title="([^"]+)"/i);
-      const title = titleMatch ? cleanText(titleMatch[1]) : itemUrl.split('/').pop().replace(/-/g, ' ');
-      const imgMatch = block.match(/<img[^>]+(?:src|data-src)="([^"]+)"/i);
-      const poster = imgMatch ? makeAbsolute(imgMatch[1]) : '';
-      const isMovie = itemUrl.includes('/film/');
+      const rawHref = linkMatch[1];
+      const epHref = makeAbsolute(rawHref);
+      const seriesHref = epHref.replace(/-\d+-bolum-izle\/?$/, '');
+      if (seen.has(seriesHref)) continue;
+      seen.add(seriesHref);
 
-      items.push({
-        id: itemUrl,
-        title: title,
-        url: itemUrl,
-        href: itemUrl,
-        image: poster,
-        poster: poster,
-        coverUrl: poster,
-        backdrop: poster,
-        isSeries: !isMovie,
-        type: isMovie ? 'movie' : 'tv',
-        badge: 'Anime'
-      });
+      const imgMatch = block.match(/(?:data-v3-deferred-src|src)="([^"]+)"/i);
+      const titleMatch = block.match(/alt="([^"]+?)(?:\s*posteri)?"/i) ||
+                         block.match(/class="[^"]*title[^"]*"[^>]*>([\s\S]*?)<\//i);
+
+      if (imgMatch && titleMatch) {
+        const title = cleanText(titleMatch[1]).replace(/\s*Season\s*\d+/i, '').trim();
+        const poster = makeAbsolute(imgMatch[1]);
+        epItems.push({
+          id: seriesHref,
+          title,
+          href: seriesHref,
+          url: seriesHref,
+          image: poster,
+          poster,
+          coverUrl: poster,
+          backdrop: poster,
+          isSeries: true,
+          type: 'tv',
+          badge: 'Anime'
+        });
+      }
     }
 
     const sections = [];
-    if (items.length > 0) {
+    if (heroItems.length > 0) {
       sections.push({
         id: 'anizm-hero',
         title: 'Öne Çıkan Animeler',
         style: 'hero',
-        items: items.slice(0, 6),
+        items: heroItems.slice(0, 6),
         viewAll: { mode: 'feed', feedId: 'hero' }
       });
+    }
 
-      if (items.length >= 10) {
-        sections.push({
-          id: 'anizm-top10',
-          title: 'Günün En Popüler 10 Animesi',
-          style: 'top10',
-          items: items.slice(0, 10),
-          viewAll: { mode: 'feed', feedId: 'top10' }
-        });
-      }
+    if (epItems.length >= 10) {
+      sections.push({
+        id: 'anizm-top10',
+        title: 'Günün En Popüler 10 Animesi',
+        style: 'top10',
+        items: epItems.slice(0, 10),
+        viewAll: { mode: 'feed', feedId: 'top10' }
+      });
+    }
 
+    if (epItems.length > 0) {
       sections.push({
         id: 'anizm-latest',
         title: 'Son Eklenen Bölümler',
         style: 'poster',
-        items: items.slice(0, 30),
+        items: epItems.slice(0, 30),
         viewAll: { mode: 'feed', feedId: 'latest' }
       });
     }

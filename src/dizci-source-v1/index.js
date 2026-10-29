@@ -926,24 +926,37 @@ async function extractSubtitles() {
 async function discoveryHome() {
   try {
     const html = await httpGet(BASE_URL + '/');
+    if (!html) return { sections: [] };
+
     const items = [];
     const seen = new Set();
-    const cardRegex = /<a[^>]+href="(\/(?:film|dizi)\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+    const articleRegex = /<article[^>]*>([\s\S]*?)<\/article>/gi;
     let m;
 
-    while ((m = cardRegex.exec(html)) !== null) {
-      const rawHref = m[1];
-      if (rawHref.includes('/sezon/') || rawHref.includes('/bolum/')) continue;
-      const fullUrl = makeAbsolute(rawHref);
+    while ((m = articleRegex.exec(html)) !== null) {
+      const art = m[1];
+      const hrefMatch = art.match(/href="(\/(?:film|dizi)\/[^"]+)"/i);
+      if (!hrefMatch) continue;
+      const fullUrl = makeAbsolute(hrefMatch[1]);
       if (seen.has(fullUrl)) continue;
+
+      const titleMatch = art.match(/class="movie-card-title"[^>]*>([\s\S]*?)<\//i) ||
+                         art.match(/alt="([^"]+?)(?:\s*(?:film|dizi)\s*posteri)?"/i);
+      const imgMatch = art.match(/<img[^>]+(?:src|data-src)="([^"]+)"/i);
+      const imdbMatch = art.match(/class="imdb-badge"[^>]*>[\s\S]*?([0-9.]+)\s*<\//i);
+
+      let title = titleMatch ? cleanText(titleMatch[1]) : '';
+      let poster = imgMatch ? makeAbsolute(imgMatch[1]) : '';
+      if (poster && poster.includes('/_next/image')) {
+        const q = poster.match(/url=([^&]+)/);
+        if (q) poster = decodeURIComponent(q[1]);
+      }
+
+      if (!title || !poster) continue;
       seen.add(fullUrl);
 
-      const block = m[2];
-      const titleMatch = block.match(/<(?:h2|h3|h4|span|strong|div)[^>]*>([\s\S]*?)<\//i);
-      const imgMatch = block.match(/src="([^"]+)"/i);
-      const title = titleMatch ? cleanText(titleMatch[1]) : rawHref.split('/').filter(Boolean).pop();
-      const poster = imgMatch ? makeAbsolute(imgMatch[1]) : '';
       const isSeries = fullUrl.includes('/dizi/');
+      const rating = imdbMatch ? parseFloat(imdbMatch[1]) : undefined;
 
       items.push({
         id: fullUrl,
@@ -956,7 +969,8 @@ async function discoveryHome() {
         backdrop: poster,
         isSeries: isSeries,
         type: isSeries ? 'tv' : 'movie',
-        badge: isSeries ? 'Dizi' : 'Film'
+        badge: rating ? '★ ' + rating : (isSeries ? 'Dizi' : 'Film'),
+        rating: rating
       });
     }
 
